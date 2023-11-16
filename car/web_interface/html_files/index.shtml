@@ -1,18 +1,32 @@
 <!DOCTYPE html>
 <html>
     <head> 
-        <title>PicoW Webserver</title> 
+        <title>CAR SERVER VROOOOOM</title> 
     </head>
-    <body> <h1>PicoW Webserver Tutorial</h1>
+    <body>
+        <h1>Group 5 Embedded System Car</h1>
         <br>
-        <h2>This bit is SSI:</h2>
+        <h2>Car Statistics SSI:</h2>
         <p>Voltage: <!--#volt--></p>
         <p>Temp: <!--#temp--> C</p>
         <p>LED is: <!--#led--></p>
+        <p>Bearing: <!--#deg--></p>
+        <p>Distance to obstacle: <!--#u_dist--></p>
         <br>
-        <h2>This bit is CGI:</h2>
+        <br>
+        <h2>Controller (CGI) :</h2>
         <a href="/led.cgi?led=1"><button>LED ON</button></a>
         <a href="/led.cgi?led=0"><button>LED OFF</button></a>
+        <br>
+        <button><a href="/direction.cgi?direction=0">Forward &#8593;</a></button>
+        <br>
+        <button><a href="/direction.cgi?direction=1">Backward &#8595;</a></button>
+        <br>
+        <button><a href="/direction.cgi?direction=2">Left &#8592;</a></button>
+        <br>
+        <button><a href="/direction.cgi?direction=3">Right &#8594;</a></button>
+        <br>
+        <button><a href="/direction.cgi?direction=4">Stop &#8594;</a></button>
         <br>
         <br>
         <a href="/index.shtml">Refresh</a>

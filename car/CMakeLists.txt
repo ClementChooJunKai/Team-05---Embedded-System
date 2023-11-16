@@ -16,6 +16,7 @@ add_executable(assembled_car assembled_car.c)
 add_library(car_magnetnometer car_magnetnometer/car_magnetnometer.c car_magnetnometer/car_magnetnometer.h)
 add_library(car_ultrasonic car_ultrasonic/car_ultrasonic.c car_ultrasonic/car_ultrasonic.h)
 add_library(car_wheel_driver car_wheel_driver/car_wheel_driver.c car_wheel_driver/car_wheel_driver.h)
+add_library(car_irline car_irline/car_irline_sensor.c car_irline/car_irline_sensor.h)
 
 
 target_include_directories(assembled_car PRIVATE
@@ -26,6 +27,7 @@ target_include_directories(assembled_car PRIVATE
 target_link_libraries(car_magnetnometer pico_stdlib hardware_i2c)
 target_link_libraries(car_ultrasonic pico_stdlib)
 target_link_libraries(car_wheel_driver pico_stdlib hardware_pwm)
+target_link_libraries(car_irline pico_stdlib hardware_adc)
 
 target_compile_definitions(assembled_car PRIVATE
         # WIFI_SSID=\"${WIFI_SSID}\"
@@ -45,7 +47,8 @@ target_link_libraries(  assembled_car
                         car_ultrasonic
                         car_wheel_driver
                         pico_lwip_http
-                        hardware_adc
+                        # hardware_adc
+                        car_irline
                     )
 
 # enable usb output onto serial monitor

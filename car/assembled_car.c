@@ -7,6 +7,8 @@
 #include "car_magnetnometer/car_magnetnometer.h"
 #include "car_ultrasonic/car_ultrasonic.h"
 #include "car_wheel_driver/car_wheel_driver.h"
+#include "car_irline/car_irline_sensor.h"
+
 
 #include "lwip/apps/httpd.h"
 #include "pico/stdlib.h"
@@ -36,6 +38,7 @@
 const char WIFI_SSID[] = "Nicolas";
 const char WIFI_PASSWORD[] = "11223344";
 
+struct SSI_CarData_Struct ssi_car_data;
 
 // TASK 1: magnetnometer Driver
 void magnetnometer_driver_task(__unused void *params)
@@ -50,16 +53,20 @@ void magnetnometer_driver_task(__unused void *params)
         // test_sensor_connection();
         get_magnetnometer_xyz_values(&magnetnometer_readings);
         int32_t compass_degree = convert_to_degrees(&magnetnometer_readings);
-        printf("X = %d, Y = %d, Z = %d\n", magnetnometer_readings.x, magnetnometer_readings.y, magnetnometer_readings.z);
+        // printf("X = %d, Y = %d, Z = %d\n", magnetnometer_readings.x, magnetnometer_readings.y, magnetnometer_readings.z);
         printf("Magnetic North: %d degrees\n", compass_degree);
 
-        // get_accelerometer_xyz_values(&accelerometer_readings);
-        // convert_accelerometer_to_Gs(&accelerometer_readings,&accelerometer_readings_in_Gs);
-        
+        get_accelerometer_xyz_values(&accelerometer_readings);
+        convert_accelerometer_to_Gs(&accelerometer_readings, &accelerometer_readings_in_Gs);
+
         // printf("\nData:\n");
         // printf("X = %d, Y = %d, Z = %d\n", accelerometer_readings.x, accelerometer_readings.y, accelerometer_readings.z);
         // printf("X = %.2f, Y = %.2f, Z = %.2f\n", accelerometer_readings_in_Gs.x, accelerometer_readings_in_Gs.y, accelerometer_readings_in_Gs.z);
 
+        ssi_car_data.compass_degree = compass_degree;
+        ssi_car_data.accelerometer_readings_in_Gs.x = accelerometer_readings_in_Gs.x;
+        ssi_car_data.accelerometer_readings_in_Gs.y = accelerometer_readings_in_Gs.y;
+        ssi_car_data.accelerometer_readings_in_Gs.z = accelerometer_readings_in_Gs.z;
         vTaskDelay(800);
     }
 }
@@ -68,15 +75,20 @@ void magnetnometer_driver_task(__unused void *params)
 void ultrasonic_driver_task(__unused void *params)
 {
     setupUltrasonic(); // Initialize the ultrasonic sensor
-    
-    while (1) {
+
+    while (1)
+    {
         double distance = getDistance(); // Get the measured distance
-        if (distance >= 0.0) {
+        if (distance >= 0.0)
+        {
             printf("Distance: %.2f cm\n", distance); // Print the distance
-        } else {
+        }
+        else
+        {
             printf("Error: Measurement Timeout\n"); // Print an error message on timeout
         }
         // vTaskDelay(ULTRASONIC_SAMPLING_RATE); // Wait for 0.1 second before the next measurement
+        ssi_car_data.ultrasonic_distance = distance;
         vTaskDelay(500); // Wait for 0.1 second before the next measurement
     }
 }
@@ -87,21 +99,22 @@ void motor_driver_task(__unused void *params)
     motor_initialize();
     sleep_ms(2500);
     while (1)
-    {   
-        motor_set_speed(0.6);
-        motor_forward();
+    {
+        motor_set_speed(1);
+        // motor_forward();
         vTaskDelay(500);
     }
 }
 
-void led_task(__unused void *params)
+void IR_driver_task(__unused void *params)
 {
-    while (true)
+    ir_sensor_init();
+    uint16_t leftResult, rightResult;
+
+    while (1)
     {
-        vTaskDelay(2000);
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-        vTaskDelay(2000);
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+        ir_sensor_read(&leftResult, &rightResult);
+        vTaskDelay(500);
     }
 }
 
@@ -145,8 +158,9 @@ void wifi_task(__unused void *params)
 
     while (true)
     {
-        // not much to do as LED is in another task, and we're using RAW (callback) lwIP API
+        // use of SSI to contstantly retrieve new info & display onto web interface
         vTaskDelay(1000);
+
         // printf("CONNECTED\n");
     }
 
@@ -157,16 +171,18 @@ void vLaunch(void)
 {
     // Declaring instances of our tasks
     TaskHandle_t wifi_taskTask;
-    TaskHandle_t ledtask;
+    // TaskHandle_t ledtask;
     TaskHandle_t magnetnometer_driverTask;
     TaskHandle_t ultrasonic_driverTask;
     TaskHandle_t motor_driverTask;
+    TaskHandle_t ir_driverTask;
 
     xTaskCreate(wifi_task, "wifi_task_thread", configMINIMAL_STACK_SIZE, NULL, TEST_TASK_PRIORITY, &wifi_taskTask);
-    xTaskCreate(led_task, "TestLedThread", configMINIMAL_STACK_SIZE, NULL, 5, &ledtask);
+    // xTaskCreate(led_task, "TestLedThread", configMINIMAL_STACK_SIZE, NULL, 5, &ledtask);
     xTaskCreate(magnetnometer_driver_task, "magnetnometer_driver_thread", configMINIMAL_STACK_SIZE, NULL, 4, &magnetnometer_driverTask);
     xTaskCreate(ultrasonic_driver_task, "ultrasonic_driver_thread", configMINIMAL_STACK_SIZE, NULL, 3, &ultrasonic_driverTask);
-    xTaskCreate(motor_driver_task, "motor_driver_thread", configMINIMAL_STACK_SIZE, NULL, TEST_TASK_PRIORITY-1, &motor_driverTask);
+    xTaskCreate(motor_driver_task, "motor_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &motor_driverTask);
+    xTaskCreate(IR_driver_task, "irline_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &ir_driverTask);
 
 #if NO_SYS && configUSE_CORE_AFFINITY && configNUM_CORES > 1
     // we must bind the main task to one core (well at least while the init is called)

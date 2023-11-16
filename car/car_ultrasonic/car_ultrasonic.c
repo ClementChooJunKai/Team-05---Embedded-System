@@ -2,10 +2,11 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "pico/time.h"
+#include "car_ultrasonic.h"
 
-#define ULTRASONIC_TRIG_PIN 26
-#define ULTRASONIC_ECHO_PIN 27
-#define ULTRASONIC_SAMPLING_RATE 1000
+// #define ULTRASONIC_TRIG_PIN 26
+// #define ULTRASONIC_ECHO_PIN 27
+// #define ULTRASONIC_SAMPLING_RATE 1000
 // #define ULTRASONIC_POWER_PIN 3
 
 static absolute_time_t start_time;
