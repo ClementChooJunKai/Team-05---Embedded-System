@@ -12,20 +12,8 @@
 
 int motor_set_speed(float motor_speed)
 {
-    static uint left_motor_slice_num = 0;
-    static uint right_motor_slice_num = 0;
-
-    if (left_motor_slice_num == 0 && right_motor_slice_num == 0)
-    {
-        left_motor_slice_num = pwm_gpio_to_slice_num(ENA);
-        right_motor_slice_num = pwm_gpio_to_slice_num(ENB);
-
-        // [MOTOR] Configure PWM to be of clock divisor 100 & set PWM width to be 12500
-        pwm_set_clkdiv(left_motor_slice_num, 100);
-        pwm_set_wrap(left_motor_slice_num, 12500);
-        pwm_set_clkdiv(right_motor_slice_num, 100);
-        pwm_set_wrap(right_motor_slice_num, 12500);
-    }
+    uint left_motor_slice_num = pwm_gpio_to_slice_num(ENA);
+    uint right_motor_slice_num = pwm_gpio_to_slice_num(ENB);
 
     // [MOTOR] Setting max PWM for left motor (Channel A)
     pwm_set_chan_level(left_motor_slice_num, PWM_CHAN_A, 12500 * motor_speed);
@@ -83,6 +71,15 @@ int motor_initialize()
     // [MOTOR] Configuring ENA & ENB as PWM
     gpio_set_function(ENA, GPIO_FUNC_PWM);
     gpio_set_function(ENB, GPIO_FUNC_PWM);
+
+    uint left_motor_slice_num = pwm_gpio_to_slice_num(ENA);
+    uint right_motor_slice_num = pwm_gpio_to_slice_num(ENB);
+
+    // [MOTOR] Configure PWM to be of clock divisor 100 & set PWM width to be 12500
+    pwm_set_clkdiv(left_motor_slice_num, 100);
+    pwm_set_wrap(left_motor_slice_num, 12500);
+    pwm_set_clkdiv(right_motor_slice_num, 100);
+    pwm_set_wrap(right_motor_slice_num, 12500);
 
     motor_set_speed(1);
 

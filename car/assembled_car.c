@@ -87,14 +87,14 @@ void ultrasonic_driver_task(__unused void *params)
             motor_stop();
         }
 
-        if (distance >= 0.0)
+        /*if (distance >= 0.0)
         {
             printf("Distance: %.2f cm\n", distance); // Print the distance
         }
         else
         {
             printf("Error: Measurement Timeout\n"); // Print an error message on timeout
-        }
+        }*/
         // vTaskDelay(ULTRASONIC_SAMPLING_RATE); // Wait for 0.1 second before the next measurement
         ssi_car_data.ultrasonic_distance = distance;
 
