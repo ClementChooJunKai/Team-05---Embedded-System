@@ -35,8 +35,8 @@
 #define RUN_FREERTOS_ON_CORE 0
 #endif
 
-const char WIFI_SSID[] = "Nicolas";
-const char WIFI_PASSWORD[] = "11223344";
+const char WIFI_SSID[] = "Yeetus";
+const char WIFI_PASSWORD[] = "182408092000";
 
 struct SSI_CarData_Struct ssi_car_data;
 
@@ -79,6 +79,14 @@ void ultrasonic_driver_task(__unused void *params)
     while (1)
     {
         double distance = getDistance(); // Get the measured distance
+        if (distance >= 0.0 && distance < 20.0){
+            motor_reverse();
+            while (getDistance() <= 20.0){
+            }
+            vTaskDelay(100);
+            motor_stop();
+        }
+
         if (distance >= 0.0)
         {
             printf("Distance: %.2f cm\n", distance); // Print the distance
@@ -89,7 +97,8 @@ void ultrasonic_driver_task(__unused void *params)
         }
         // vTaskDelay(ULTRASONIC_SAMPLING_RATE); // Wait for 0.1 second before the next measurement
         ssi_car_data.ultrasonic_distance = distance;
-        vTaskDelay(500); // Wait for 0.1 second before the next measurement
+
+        vTaskDelay(50);
     }
 }
 
@@ -98,11 +107,18 @@ void motor_driver_task(__unused void *params)
 {
     motor_initialize();
     sleep_ms(2500);
+    motor_forward();
     while (1)
     {
-        motor_set_speed(1);
-        // motor_forward();
-        vTaskDelay(500);
+        /*motor_set_speed(1);
+        motor_forward();
+        vTaskDelay(250);
+        motor_stop();
+        vTaskDelay(250);
+        motor_reverse();
+        vTaskDelay(250);
+        motor_stop();
+        vTaskDelay(500);*/
     }
 }
 
@@ -197,7 +213,7 @@ void vLaunch(void)
 
 int main(void)
 {
-    stdio_init_all();
+    stdio_usb_init();
     sleep_ms(5000);
     /* Configure the hardware ready to run the demo. */
     const char *rtos_name;

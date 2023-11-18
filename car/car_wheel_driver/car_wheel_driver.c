@@ -92,6 +92,7 @@ int motor_initialize()
 // [MOTOR] Spins Left & Right Motor spins forward.
 int motor_forward()
 {
+    motor_set_speed(1);
     gpio_put(IN1, 0);
     gpio_put(IN2, 1);
     gpio_put(IN3, 0);
@@ -103,6 +104,7 @@ int motor_forward()
 // [MOTOR] Left & Right Motor spins backwards.
 int motor_reverse()
 {
+    motor_set_speed(1);
     gpio_put(IN1, 1);
     gpio_put(IN2, 0);
     gpio_put(IN3, 1);
@@ -114,6 +116,7 @@ int motor_reverse()
 // [MOTOR] Right Motor stops, Left Motor goes forward
 int motor_forward_right()
 {
+    motor_set_speed(1);
     gpio_put(IN1, 0);
     gpio_put(IN2, 1);
     gpio_put(IN3, 0);
@@ -124,6 +127,7 @@ int motor_forward_right()
 
 int motor_reverse_right()
 {
+    motor_set_speed(1);
     gpio_put(IN1, 1);
     gpio_put(IN2, 0);
     gpio_put(IN3, 0);
@@ -135,6 +139,7 @@ int motor_reverse_right()
 // [MOTOR] Right Motor goes forward, Left Motor stops
 int motor_forward_left()
 {
+    motor_set_speed(1);
     gpio_put(IN1, 0);
     gpio_put(IN2, 0);
     gpio_put(IN3, 0);
@@ -145,6 +150,7 @@ int motor_forward_left()
 
 int motor_reverse_left()
 {
+    motor_set_speed(1);
     gpio_put(IN1, 0);
     gpio_put(IN2, 0);
     gpio_put(IN3, 1);
@@ -156,6 +162,7 @@ int motor_reverse_left()
 // [MOTOR] Both Motor Stops
 int motor_stop()
 {
+    motor_set_speed(1);
     gpio_put(IN1, 0);
     gpio_put(IN2, 0);
     gpio_put(IN3, 0);
