@@ -83,9 +83,9 @@ void ultrasonic_driver_task(__unused void *params)
             motor_reverse();
             while (getDistance() <= 20.0){
             }
-            vTaskDelay(100);
             motor_stop();
         }
+
 
         /*if (distance >= 0.0)
         {
@@ -106,7 +106,7 @@ void ultrasonic_driver_task(__unused void *params)
 void motor_driver_task(__unused void *params)
 {
     motor_initialize();
-    sleep_ms(2500);
+    vTaskDelay(2500);
     motor_forward();
     while (1)
     {
@@ -138,8 +138,8 @@ void wheel_encoder_driver_task(__unused void *params)
     setupWheelEncoder();
     while(1)
     {
-        calculateSpeed('L');
-        calculateSpeed('R');
+        printf("%f", calculateSpeed('L'));
+        printf("%f", calculateSpeed('R'));
         vTaskDelay(2000);
     }
 }
@@ -193,6 +193,27 @@ void wifi_task(__unused void *params)
     cyw43_arch_deinit();
 }
 
+void interruptHandler(uint gpio, uint32_t events)
+{
+    if (gpio == ULTRASONIC_ECHO_PIN){
+        ultrasonicHandler(events);
+    }
+    else if (gpio == LEFT_ENCODER_PIN){
+        leftWheelEncoderHandler();
+    }
+    else if (gpio == RIGHT_ENCODER_PIN){
+        rightWheelEncoderHandler();
+    }
+
+}
+
+void setupInterrupts()
+{
+    gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interruptHandler);
+    gpio_set_irq_enabled(LEFT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true);
+    gpio_set_irq_enabled(RIGHT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true);
+}
+
 void vLaunch(void)
 {
     // Declaring instances of our tasks
@@ -211,6 +232,8 @@ void vLaunch(void)
     xTaskCreate(motor_driver_task, "motor_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &motor_driverTask);
     xTaskCreate(IR_driver_task, "irline_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &ir_driverTask);
     xTaskCreate(wheel_encoder_driver_task, "wheel_encoder_driver_thread", configMINIMAL_STACK_SIZE, NULL, 3, &wheel_encoder_driverTask);
+
+    setupInterrupts();
     
 
 #if NO_SYS && configUSE_CORE_AFFINITY && configNUM_CORES > 1

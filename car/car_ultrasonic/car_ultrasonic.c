@@ -11,21 +11,28 @@
 
 static absolute_time_t start_time;
 static absolute_time_t end_time;
-static bool rising_edge = true;
+//static bool rising_edge = true;
 const int NUM_READINGS = 100; // Number of readings to average for better accuracy
 
-void echo_pin_handler(uint gpio, uint32_t events) {
+/*void echo_pin_handler(uint gpio, uint32_t events) {
     if (rising_edge) {
         start_time = get_absolute_time(); // Record the time of a rising edge
     } else {
         end_time = get_absolute_time(); // Record the time of a falling edge
     }
     rising_edge = !rising_edge; // Toggle the edge detection state
+}*/
+
+void ultrasonicHandler(uint32_t events)
+{
+    if (events == 8) {
+        start_time = get_absolute_time(); // Record the time of a rising edge
+    } else if (events == 4) {
+        end_time = get_absolute_time(); // Record the time of a falling edge
+    }
 }
 
 void setupUltrasonic() {
-    stdio_init_all(); // Initialize the standard I/O for printing
-
     // gpio_init(ULTRASONIC_POWER_PIN); //Initializes the GPIO pin as power.
     // gpio_set_dir(ULTRASONIC_POWER_PIN, GPIO_OUT); // Set the pin as an output
     // gpio_put(ULTRASONIC_POWER_PIN, true); // Set the pin high to output 3.3V to supply power to ultrasonic
@@ -36,10 +43,9 @@ void setupUltrasonic() {
     gpio_set_dir(ULTRASONIC_ECHO_PIN, GPIO_IN); // Set the ECHO pin as an input
 
     // Configure interrupts to capture rising and falling edges of the ECHO pin
-    gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &echo_pin_handler);
+    // gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &echo_pin_handler);
 
     gpio_put(ULTRASONIC_TRIG_PIN, false); // Set the ULTRASONIC_TRIG_PIN pin low initially
-    sleep_ms(500); // Wait for 0.5 seconds
 }
 
 double getDistance() {

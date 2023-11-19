@@ -10,7 +10,10 @@
 #define POWER_PIN_2 4
 
 // Function prototypes
-float calculateSpeed(char direction);
 void setupWheelEncoder();
+void leftWheelEncoderHandler();
+void rightWheelEncoderHandler();
+float calculateSpeed(char direction);
+
 
 #endif

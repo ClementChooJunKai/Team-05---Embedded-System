@@ -8,5 +8,6 @@
 // Function prototypes
 void setupUltrasonic();
 double getDistance();
+void ultrasonicHandler(uint32_t events);
 
 #endif // ULTRASONIC_SENSOR_H

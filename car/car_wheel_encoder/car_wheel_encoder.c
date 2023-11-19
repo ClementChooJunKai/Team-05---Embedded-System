@@ -13,6 +13,7 @@
 int total_elapsed_time = 0;
 float distance_travelled_in_cm_left = 0;
 float distance_travelled_in_cm_right = 0;
+struct repeating_timer timer;
 
 // Timer callback used to create 1s time & calculate speed D/T
 bool timer_callback(struct repeating_timer *t)
@@ -27,24 +28,24 @@ bool timer_callback(struct repeating_timer *t)
 }
 
 // Interupt to calculate total distance travelled by left motor
-void distance_callback_left_motor(uint gpio, uint32_t events)
+/*void distance_callback_left_motor(uint gpio, uint32_t events)
 {
     // static float distance_travelled_in_cm_left = 0;
     distance_travelled_in_cm_left += DISTANCE_IN_CM_PER_STEP;
     printf("Distance Travelled Left Motor: %2f cm\n", distance_travelled_in_cm_left);
     return;
-}
+}*/
 
 // Interupt to calculate total distance travelled by right motor
-void distance_callback_right_motor(uint gpio, uint32_t events)
+/*void distance_callback_right_motor(uint gpio, uint32_t events)
 {
     // static float distance_travelled_in_cm_right = 0;
     distance_travelled_in_cm_right += DISTANCE_IN_CM_PER_STEP;
     printf("Distance Travelled Right Motor: %2f cm\n", distance_travelled_in_cm_right);
     return;
-}
+}*/
 
-void distance_callback(uint gpio, uint32_t events)
+/*void distance_callback(uint gpio, uint32_t events)
 {
     if (gpio == LEFT_ENCODER_PIN){
         distance_travelled_in_cm_left += DISTANCE_IN_CM_PER_STEP;
@@ -54,11 +55,10 @@ void distance_callback(uint gpio, uint32_t events)
         printf("Distance Travelled Right Motor: %2f cm\n", distance_travelled_in_cm_right);
     }
     return;
-}
+}*/
 
 float calculateSpeed(char direction)
 {
-    printf("ENTERED LOOP\n");
     switch (direction)
     {
     case 'L':
@@ -72,9 +72,22 @@ float calculateSpeed(char direction)
 
 void setupWheelEncoder()
 {
-    // Interupt program for every high edge rise which correlates to 1 step on wheel encoder disc.
-    gpio_set_irq_enabled_with_callback(LEFT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true, &distance_callback);
-    gpio_set_irq_enabled(RIGHT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true);
+    // Repeating timer interupt of 1s, used to get the total elapsed time of program & speed of motor
+    add_repeating_timer_ms(1000, timer_callback, NULL, &timer);
+}
+
+void leftWheelEncoderHandler()
+{
+    distance_travelled_in_cm_left += DISTANCE_IN_CM_PER_STEP;
+    // printf("Distance Travelled Left Motor: %2f cm\n", distance_travelled_in_cm_left);
+    return;
+}
+
+void rightWheelEncoderHandler()
+{
+    distance_travelled_in_cm_right += DISTANCE_IN_CM_PER_STEP;
+    // printf("Distance Travelled Right Motor: %2f cm\n", distance_travelled_in_cm_right);
+    return;
 }
 
 /*int main()
