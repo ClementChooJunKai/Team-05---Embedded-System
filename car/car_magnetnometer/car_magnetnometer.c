@@ -156,6 +156,7 @@ int init_i2c_and_sensors()
     uint8_t config_data2[] = {0x01, 0xE0}; // Configuration: Gain settings config (1110000) Refer to page 38 of documentation
     uint8_t config_data3[] = {0x20, 0x77}; // Configuration: Sets data rate to normal mode at 400Hz, enable z,y,z axis.
     uint8_t config_data4[] = {0x23, 0x00}; // Configuration: Sets accelerometer to provide continuous data update
+
     i2c_write_blocking(I2C_PORT, MAGNET_SENSOR_ADDR, config_data1, sizeof(config_data1), false);
     i2c_write_blocking(I2C_PORT, MAGNET_SENSOR_ADDR, config_data2, sizeof(config_data2), false);
     i2c_write_blocking(I2C_PORT, ACCELEROMETER_SENSOR_ADDRESS, config_data3, sizeof(config_data3), false);
