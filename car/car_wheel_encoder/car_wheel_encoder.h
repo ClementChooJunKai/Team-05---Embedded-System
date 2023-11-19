@@ -13,7 +13,8 @@
 void setupWheelEncoder();
 void leftWheelEncoderHandler();
 void rightWheelEncoderHandler();
-float calculateSpeed(char direction);
+float getLeftMotorSpeed();
+float getRightMotorSpeed();
 
 
 #endif

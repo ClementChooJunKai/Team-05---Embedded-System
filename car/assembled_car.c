@@ -138,8 +138,8 @@ void wheel_encoder_driver_task(__unused void *params)
     setupWheelEncoder();
     while(1)
     {
-        printf("%f", calculateSpeed('L'));
-        printf("%f", calculateSpeed('R'));
+        printf("%f", getLeftMotorSpeed());
+        printf("%f", getRightMotorSpeed());
         vTaskDelay(2000);
     }
 }
