@@ -8,6 +8,7 @@
 #include "car_ultrasonic/car_ultrasonic.h"
 #include "car_wheel_driver/car_wheel_driver.h"
 #include "car_irline/car_irline_sensor.h"
+#include "car_wheel_encoder/car_wheel_encoder.h"
 
 
 #include "lwip/apps/httpd.h"
@@ -44,7 +45,6 @@ struct SSI_CarData_Struct ssi_car_data;
 void magnetnometer_driver_task(__unused void *params)
 {
     init_i2c_and_sensors(); // Inititalizes I2C Port & setups sensors
-
     xyz_struct magnetnometer_readings, accelerometer_readings;
     xyz_struct_float accelerometer_readings_in_Gs;
 
@@ -133,6 +133,16 @@ void IR_driver_task(__unused void *params)
         vTaskDelay(500);
     }
 }
+void wheel_encoder_driver_task(__unused void *params)
+{
+    setupWheelEncoder();
+    while(1)
+    {
+        calculateSpeed('L');
+        calculateSpeed('R');
+        vTaskDelay(2000);
+    }
+}
 
 void wifi_task(__unused void *params)
 {
@@ -192,6 +202,7 @@ void vLaunch(void)
     TaskHandle_t ultrasonic_driverTask;
     TaskHandle_t motor_driverTask;
     TaskHandle_t ir_driverTask;
+    TaskHandle_t wheel_encoder_driverTask;
 
     xTaskCreate(wifi_task, "wifi_task_thread", configMINIMAL_STACK_SIZE, NULL, TEST_TASK_PRIORITY, &wifi_taskTask);
     // xTaskCreate(led_task, "TestLedThread", configMINIMAL_STACK_SIZE, NULL, 5, &ledtask);
@@ -199,6 +210,8 @@ void vLaunch(void)
     xTaskCreate(ultrasonic_driver_task, "ultrasonic_driver_thread", configMINIMAL_STACK_SIZE, NULL, 3, &ultrasonic_driverTask);
     xTaskCreate(motor_driver_task, "motor_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &motor_driverTask);
     xTaskCreate(IR_driver_task, "irline_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &ir_driverTask);
+    xTaskCreate(wheel_encoder_driver_task, "wheel_encoder_driver_thread", configMINIMAL_STACK_SIZE, NULL, 3, &wheel_encoder_driverTask);
+    
 
 #if NO_SYS && configUSE_CORE_AFFINITY && configNUM_CORES > 1
     // we must bind the main task to one core (well at least while the init is called)
