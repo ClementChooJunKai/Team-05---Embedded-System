@@ -1,14 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
-
-#define LEFT_ENCODER_PIN 2
-#define RIGHT_ENCODER_PIN 3
-#define WHEEL_ENCODER_SLOTS 20
-#define WHEEL_DIAMETER 66          // Diameter in millimeter
-#define WHEEL_CIRCUMFERENCE 207.35 // CIRCUMFERENCE in mm, derived from 66mm * PI
-#define DISTANCE_IN_CM_PER_STEP 1.03675
-#define POWER_PIN_2 4
+#include "car_wheel_encoder.h"
 
 int total_elapsed_time = 0;
 struct repeating_timer timer;
@@ -47,11 +40,11 @@ float calculateSpeed(char direction)
 bool timer_callback(struct repeating_timer *t)
 {
     total_elapsed_time++;
-    printf("Total Elapsed Time: %ds\n", total_elapsed_time);
+    //printf("Total Elapsed Time: %ds\n", total_elapsed_time);
 
     left_motor_speed = calculateSpeed('L');
     right_motor_speed = calculateSpeed('R');
-    printf("Left Motor Speed: %.2f cm/s, Right Motor Speed: %.2f cm/s\n", left_motor_speed, right_motor_speed);
+    //printf("Left Motor Speed: %.2f cm/s, Right Motor Speed: %.2f cm/s\n", left_motor_speed, right_motor_speed);
 
     return true;
 }

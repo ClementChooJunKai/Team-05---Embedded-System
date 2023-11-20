@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include "pico/stdlib.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -9,6 +10,7 @@
 #include "car_wheel_driver/car_wheel_driver.h"
 #include "car_irline/car_irline_sensor.h"
 #include "car_wheel_encoder/car_wheel_encoder.h"
+#include "car_pid_controller/car_pid_controller.h"
 
 
 #include "lwip/apps/httpd.h"
@@ -36,10 +38,14 @@
 #define RUN_FREERTOS_ON_CORE 0
 #endif
 
+#define TARGET_SPEED 30.0
+
+
 const char WIFI_SSID[] = "Yeetus";
 const char WIFI_PASSWORD[] = "182408092000";
 
 struct SSI_CarData_Struct ssi_car_data;
+
 
 // TASK 1: magnetnometer Driver
 void magnetnometer_driver_task(__unused void *params)
@@ -80,7 +86,7 @@ void ultrasonic_driver_task(__unused void *params)
     {
         double distance = getDistance(); // Get the measured distance
         if (distance >= 0.0 && distance < 20.0){
-            motor_reverse();
+            motor_reverse(0.8, 0.8);
             while (getDistance() <= 20.0){
             }
             motor_stop();
@@ -105,20 +111,39 @@ void ultrasonic_driver_task(__unused void *params)
 // TASK 3: Motor Driver (Includes wheel encoder)
 void motor_driver_task(__unused void *params)
 {
+    setupWheelEncoder();
     motor_initialize();
-    vTaskDelay(2500);
-    motor_forward();
+    float duty_cycle_left = 0.8;
+    float duty_cycle_right = 0.8;
+    vTaskDelay(3000);
+
     while (1)
     {
-        /*motor_set_speed(1);
-        motor_forward();
-        vTaskDelay(250);
-        motor_stop();
-        vTaskDelay(250);
-        motor_reverse();
-        vTaskDelay(250);
-        motor_stop();
-        vTaskDelay(500);*/
+        float current_left_speed = getLeftMotorSpeed();
+        float current_right_speed = getRightMotorSpeed();
+        printf("Left speed: %f, Right speed: %f", current_left_speed, current_right_speed);
+        if (current_left_speed == 0 && current_right_speed == 0){
+            duty_cycle_left = 0.8;
+            duty_cycle_right = 0.8;
+        }
+        else
+        {
+            float pid_out_left = pidUpdateLeft(TARGET_SPEED, current_left_speed);
+            float pid_out_right = pidUpdateRight(TARGET_SPEED, current_right_speed);
+
+            printf("Pid_L:%f Pid_R:%f", pid_out_left, pid_out_right);
+
+            duty_cycle_left += pid_out_left;
+            duty_cycle_right += pid_out_right;
+        }
+
+        // Ensure duty cycle remains within valid range (0 to 1)
+        duty_cycle_left = fminf(1.0, fmaxf(0.0, duty_cycle_left));
+        duty_cycle_right = fminf(1.0, fmaxf(0.0, duty_cycle_right));
+
+        printf("L:%f, R:%f", duty_cycle_left, duty_cycle_right);
+        motor_forward(duty_cycle_left, duty_cycle_right);
+        vTaskDelay(1000);
     }
 }
 
@@ -131,16 +156,6 @@ void IR_driver_task(__unused void *params)
     {
         ir_sensor_read(&leftResult, &rightResult);
         vTaskDelay(500);
-    }
-}
-void wheel_encoder_driver_task(__unused void *params)
-{
-    setupWheelEncoder();
-    while(1)
-    {
-        printf("%f", getLeftMotorSpeed());
-        printf("%f", getRightMotorSpeed());
-        vTaskDelay(2000);
     }
 }
 
@@ -223,7 +238,6 @@ void vLaunch(void)
     TaskHandle_t ultrasonic_driverTask;
     TaskHandle_t motor_driverTask;
     TaskHandle_t ir_driverTask;
-    TaskHandle_t wheel_encoder_driverTask;
 
     xTaskCreate(wifi_task, "wifi_task_thread", configMINIMAL_STACK_SIZE, NULL, TEST_TASK_PRIORITY, &wifi_taskTask);
     // xTaskCreate(led_task, "TestLedThread", configMINIMAL_STACK_SIZE, NULL, 5, &ledtask);
@@ -231,7 +245,6 @@ void vLaunch(void)
     xTaskCreate(ultrasonic_driver_task, "ultrasonic_driver_thread", configMINIMAL_STACK_SIZE, NULL, 3, &ultrasonic_driverTask);
     xTaskCreate(motor_driver_task, "motor_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &motor_driverTask);
     xTaskCreate(IR_driver_task, "irline_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &ir_driverTask);
-    xTaskCreate(wheel_encoder_driver_task, "wheel_encoder_driver_thread", configMINIMAL_STACK_SIZE, NULL, 3, &wheel_encoder_driverTask);
 
     setupInterrupts();
     

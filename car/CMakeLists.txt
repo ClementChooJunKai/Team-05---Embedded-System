@@ -18,6 +18,8 @@ add_library(car_ultrasonic car_ultrasonic/car_ultrasonic.c car_ultrasonic/car_ul
 add_library(car_wheel_driver car_wheel_driver/car_wheel_driver.c car_wheel_driver/car_wheel_driver.h)
 add_library(car_irline car_irline/car_irline_sensor.c car_irline/car_irline_sensor.h)
 add_library(car_wheel_encoder car_wheel_encoder/car_wheel_encoder.c car_wheel_encoder/car_wheel_encoder.h)
+add_library(car_pid_controller car_pid_controller/car_pid_controller.c car_pid_controller/car_pid_controller.h)
+
 
 
 
@@ -31,6 +33,7 @@ target_link_libraries(car_ultrasonic pico_stdlib)
 target_link_libraries(car_wheel_driver pico_stdlib hardware_pwm)
 target_link_libraries(car_irline pico_stdlib hardware_adc)
 target_link_libraries(car_wheel_encoder pico_stdlib)
+target_link_libraries(car_pid_controller pico_stdlib)
 
 
 target_compile_definitions(assembled_car PRIVATE
@@ -46,11 +49,12 @@ target_link_libraries(  assembled_car
                         pico_stdlib 
                         pico_lwip_iperf 
                         FreeRTOS-Kernel-Heap4 
-                        pico_cyw43_arch_lwip_sys_freertos 
+                        pico_cyw43_arch_lwip_sys_freertos
                         car_magnetnometer
                         car_ultrasonic
                         car_wheel_driver
                         car_wheel_encoder
+                        car_pid_controller
                         pico_lwip_http
                         # hardware_adc
                         car_irline

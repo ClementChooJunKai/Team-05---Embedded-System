@@ -25,25 +25,25 @@ const char * cgi_direction_handler(int iIndex, int iNumParams, char *pcParam[], 
             // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             motor_stop();
             sleep_ms(500);    
-            motor_forward();
+            //motor_forward(1);
         }
         else if(strcmp(pcValue[0], "1") == 0){
             // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
             motor_stop();
             sleep_ms(500);    
-            motor_reverse();
+            //motor_reverse(1);
         }
         else if(strcmp(pcValue[0], "2") == 0){
             // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             motor_stop();
             sleep_ms(500);    
-            motor_forward_left();
+            //motor_forward_left(1);
         }
         else if(strcmp(pcValue[0], "3") == 0){
             // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
             motor_stop();
             sleep_ms(500);    
-            motor_forward_right();
+            //motor_forward_right(1);
         }
         else if(strcmp(pcValue[0], "4") == 0){
             // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);

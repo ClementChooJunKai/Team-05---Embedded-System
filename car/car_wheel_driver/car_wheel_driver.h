@@ -11,14 +11,14 @@
 #define IN3 20
 #define IN4 21
 
-int motor_set_speed(float motor_speed);
+void motor_set_speed(float left_motor_speed, float right_motor_speed);
 int motor_initialize();
-int motor_forward();
-int motor_reverse();
-int motor_forward_right();
-int motor_reverse_right();
-int motor_forward_left();
-int motor_reverse_left();
+int motor_forward(float left_motor_speed, float right_motor_speed);
+int motor_reverse(float left_motor_speed, float right_motor_speed);
+int motor_forward_right(float left_motor_speed, float right_motor_speed);
+int motor_reverse_right(float left_motor_speed, float right_motor_speed);
+int motor_forward_left(float left_motor_speed, float right_motor_speed);
+int motor_reverse_left(float left_motor_speed, float right_motor_speed);
 int motor_stop();
 
 #endif  // MOTOR_H

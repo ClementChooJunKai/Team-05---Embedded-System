@@ -3,49 +3,28 @@
 #include "hardware/pwm.h"
 #include "car_wheel_driver.h"
 
-#define IN1 10 // [MOTOR] Left Motor
-#define IN2 11
-#define ENA 12
-#define ENB 19 // [MOTOR] Right Motor
-#define IN3 20
-#define IN4 21
-
-int motor_set_speed(float motor_speed)
+void motor_set_left_speed(float motor_speed)
 {
     uint left_motor_slice_num = pwm_gpio_to_slice_num(ENA);
-    uint right_motor_slice_num = pwm_gpio_to_slice_num(ENB);
-
     // [MOTOR] Setting max PWM for left motor (Channel A)
     pwm_set_chan_level(left_motor_slice_num, PWM_CHAN_A, 12500 * motor_speed);
     pwm_set_enabled(left_motor_slice_num, true);
-
-    // [MOTOR] Setting max PWM for left motor (Channel B)
-    pwm_set_chan_level(right_motor_slice_num, PWM_CHAN_B, 12500 * motor_speed);
-    pwm_set_enabled(right_motor_slice_num, true);
-
-    return 0;
+    return;
 }
 
-// OLD SPEED MODIFIER METHOD. DEPRECIATED AS MAY BE LESS OPTIMIZED. {CONSULT FOR OPINION}
-// int motor_set_speed(float motor_speed)
-// {
-//     uint left_motor_slice_num = pwm_gpio_to_slice_num(ENA);
-//     uint right_motor_slice_num = pwm_gpio_to_slice_num(ENB);
-//     pwm_set_clkdiv(left_motor_slice_num, 100);
-//     pwm_set_wrap(left_motor_slice_num, 12500);
-//     pwm_set_clkdiv(right_motor_slice_num, 100);
-//     pwm_set_wrap(right_motor_slice_num, 12500);
+void motor_set_right_speed(float motor_speed)
+{
+    uint right_motor_slice_num = pwm_gpio_to_slice_num(ENB);
+     // [MOTOR] Setting max PWM for right motor (Channel B)
+    pwm_set_chan_level(right_motor_slice_num, PWM_CHAN_B, 12500 * motor_speed);
+    pwm_set_enabled(right_motor_slice_num, true);
+}
 
-//     // [MOTOR] Setting max PWM for left motor (Channel A)
-//     pwm_set_chan_level(left_motor_slice_num, PWM_CHAN_A, 12500 * motor_speed);
-//     pwm_set_enabled(left_motor_slice_num, true);
-
-//     // [MOTOR] Setting max PWM for left motor (Channel B)
-//     pwm_set_chan_level(right_motor_slice_num, PWM_CHAN_B, 12500 * motor_speed);
-//     pwm_set_enabled(right_motor_slice_num, true);
-
-//     return 0;
-// }
+void motor_set_speed(float left_motor_speed, float right_motor_speed)
+{
+    motor_set_left_speed(left_motor_speed);
+    motor_set_right_speed(right_motor_speed);
+}
 
 int motor_initialize()
 {
@@ -81,15 +60,13 @@ int motor_initialize()
     pwm_set_clkdiv(right_motor_slice_num, 100);
     pwm_set_wrap(right_motor_slice_num, 12500);
 
-    motor_set_speed(1);
-
     return 0;
 }
 
 // [MOTOR] Spins Left & Right Motor spins forward.
-int motor_forward()
+int motor_forward(float left_motor_speed, float right_motor_speed)
 {
-    motor_set_speed(1);
+    motor_set_speed(left_motor_speed, right_motor_speed);
     gpio_put(IN1, 0);
     gpio_put(IN2, 1);
     gpio_put(IN3, 0);
@@ -99,9 +76,9 @@ int motor_forward()
 }
 
 // [MOTOR] Left & Right Motor spins backwards.
-int motor_reverse()
+int motor_reverse(float left_motor_speed, float right_motor_speed)
 {
-    motor_set_speed(1);
+    motor_set_speed(left_motor_speed, right_motor_speed);    
     gpio_put(IN1, 1);
     gpio_put(IN2, 0);
     gpio_put(IN3, 1);
@@ -111,9 +88,9 @@ int motor_reverse()
 }
 
 // [MOTOR] Right Motor stops, Left Motor goes forward
-int motor_forward_right()
+int motor_forward_right(float left_motor_speed, float right_motor_speed)
 {
-    motor_set_speed(1);
+    motor_set_speed(left_motor_speed, right_motor_speed);
     gpio_put(IN1, 0);
     gpio_put(IN2, 1);
     gpio_put(IN3, 0);
@@ -122,9 +99,9 @@ int motor_forward_right()
     return 0;
 }
 
-int motor_reverse_right()
+int motor_reverse_right(float left_motor_speed, float right_motor_speed)
 {
-    motor_set_speed(1);
+    motor_set_speed(left_motor_speed, right_motor_speed);
     gpio_put(IN1, 1);
     gpio_put(IN2, 0);
     gpio_put(IN3, 0);
@@ -134,9 +111,9 @@ int motor_reverse_right()
 }
 
 // [MOTOR] Right Motor goes forward, Left Motor stops
-int motor_forward_left()
+int motor_forward_left(float left_motor_speed, float right_motor_speed)
 {
-    motor_set_speed(1);
+    motor_set_speed(left_motor_speed, right_motor_speed);
     gpio_put(IN1, 0);
     gpio_put(IN2, 0);
     gpio_put(IN3, 0);
@@ -145,9 +122,9 @@ int motor_forward_left()
     return 0;
 }
 
-int motor_reverse_left()
+int motor_reverse_left(float left_motor_speed, float right_motor_speed)
 {
-    motor_set_speed(1);
+    motor_set_speed(left_motor_speed, right_motor_speed);
     gpio_put(IN1, 0);
     gpio_put(IN2, 0);
     gpio_put(IN3, 1);
@@ -159,7 +136,6 @@ int motor_reverse_left()
 // [MOTOR] Both Motor Stops
 int motor_stop()
 {
-    motor_set_speed(1);
     gpio_put(IN1, 0);
     gpio_put(IN2, 0);
     gpio_put(IN3, 0);
@@ -167,39 +143,3 @@ int motor_stop()
 
     return 0;
 }
-
-// int main()
-// {
-//     stdio_init_all();
-//     motor_initialize();
-//     sleep_ms(2500);
-//     while (1)
-//     {   
-//         motor_set_speed(0.6);
-//         motor_forward();
-        
-//         // sleep_ms(2000);
-
-//         // motor_stop();
-//         // sleep_ms(2000);
-
-//         // motor_reverse();
-//         // sleep_ms(2000);
-
-//         // motor_forward_right();
-//         // sleep_ms(1000);
-        
-//         // motor_reverse_right();
-//         // sleep_ms(1000);
-
-//         // motor_forward_left();
-//         // sleep_ms(1000);
-
-//         // motor_reverse_left();
-//         // sleep_ms(1000);
-        
-//         // motor_set_speed(0.6);
-//     }
-
-//     return 0;
-// }
