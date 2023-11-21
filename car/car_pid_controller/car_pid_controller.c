@@ -4,6 +4,9 @@
 #include "pico/time.h"
 #include "car_pid_controller.h"
 
+float integral = 0.0;
+float prev_error = 0.0;
+
 float integral_left = 0.0;
 float prev_error_left = 0.0;
 
@@ -32,4 +35,27 @@ float pidUpdateRight(float setpoint, float current_value) {
 
     prev_error_right = error;
     return output;
+}
+
+float pidUpdateSpeed(float setpoint, float current_value){
+    float error = setpoint - current_value;
+    integral += error;
+    float derivative = error - prev_error;
+
+    float output = KP * error + KI * integral + KD * derivative;
+
+    prev_error = error;
+    return output;
+}
+
+void resetIntegral(){
+    integral = 0.0;
+}
+
+void resetLeftIntegral(){
+    integral_left=0.0;
+}
+
+void resetRightIntegral(){
+    integral_right=0.0;
 }

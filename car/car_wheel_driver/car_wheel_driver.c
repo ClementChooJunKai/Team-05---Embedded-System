@@ -99,6 +99,16 @@ int motor_forward_right(float left_motor_speed, float right_motor_speed)
     return 0;
 }
 
+int motor_rotate_right(float left_motor_speed, float right_motor_speed)
+{
+    motor_set_speed(left_motor_speed, right_motor_speed);
+    gpio_put(IN1, 0);
+    gpio_put(IN2, 1);
+    gpio_put(IN3, 1);
+    gpio_put(IN4, 0);
+    return 0;
+}
+
 int motor_reverse_right(float left_motor_speed, float right_motor_speed)
 {
     motor_set_speed(left_motor_speed, right_motor_speed);
@@ -119,6 +129,16 @@ int motor_forward_left(float left_motor_speed, float right_motor_speed)
     gpio_put(IN3, 0);
     gpio_put(IN4, 1);
 
+    return 0;
+}
+
+int motor_rotate_left(float left_motor_speed, float right_motor_speed)
+{
+    motor_set_speed(left_motor_speed, right_motor_speed);
+    gpio_put(IN1, 1);
+    gpio_put(IN2, 0);
+    gpio_put(IN3, 0);
+    gpio_put(IN4, 1);
     return 0;
 }
 

@@ -16,8 +16,10 @@ int motor_initialize();
 int motor_forward(float left_motor_speed, float right_motor_speed);
 int motor_reverse(float left_motor_speed, float right_motor_speed);
 int motor_forward_right(float left_motor_speed, float right_motor_speed);
+int motor_rotate_right(float left_motor_speed, float right_motor_speed);
 int motor_reverse_right(float left_motor_speed, float right_motor_speed);
 int motor_forward_left(float left_motor_speed, float right_motor_speed);
+int motor_rotate_left(float left_motor_speed, float right_motor_speed);
 int motor_reverse_left(float left_motor_speed, float right_motor_speed);
 int motor_stop();
 

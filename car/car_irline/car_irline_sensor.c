@@ -3,6 +3,9 @@
 #include "hardware/adc.h"
 #include "car_irline_sensor.h" // Include the header file
 
+bool wall_left = false;
+bool wall_right = false;
+
 void ir_sensor_init()
 {
     // stdio_usb_init();
@@ -24,10 +27,10 @@ void ir_sensor_read(uint16_t *leftResult, uint16_t *rightResult)
     adc_select_input(1);                // Select ADC input 1
     *rightResult = adc_read();
 
-    printf("Left sensor: %d, Right sensor: %d. ", *leftResult, *rightResult); // Print out the ADC value
+    //printf("Left sensor: %d, Right sensor: %d. ", *leftResult, *rightResult); // Print out the ADC value
 
     // Perform some action based on the ADC value
-    if (*leftResult > DETECTION_THRESHOLD && *rightResult > DETECTION_THRESHOLD)
+    /*if (*leftResult > DETECTION_THRESHOLD && *rightResult > DETECTION_THRESHOLD)
     {                                                          // if nothing is detected
         printf("Wall detected on both sensors. Turn back!\n"); // reverse car and turn it left or right randomly
     }
@@ -45,6 +48,31 @@ void ir_sensor_read(uint16_t *leftResult, uint16_t *rightResult)
     {
         // main code
         printf("No wall detected. Continue moving forward.\n"); // move straight
+    }*/
+}
+
+void ir_write_left(uint32_t events){
+    if (events == GPIO_IRQ_EDGE_RISE){
+        wall_left = false;
     }
-    sleep_ms(1000); // Adjust the delay as needed
+    else{
+        wall_left = true;
+    }
+}
+
+void ir_write_right(uint32_t events){
+    if (events == GPIO_IRQ_EDGE_RISE){
+        wall_right = false;
+    }
+    else{
+        wall_right = true;
+    }
+}
+
+bool ir_read_left(){
+    return wall_left;
+}
+
+bool ir_read_right(){
+    return wall_right;
 }
