@@ -11,6 +11,8 @@
 #include "car_irline/car_irline_sensor.h"
 #include "car_wheel_encoder/car_wheel_encoder.h"
 #include "car_pid_controller/car_pid_controller.h"
+#include "car_irline/car_ir_barcode.h"
+
 
 
 #include "lwip/apps/httpd.h"
@@ -41,8 +43,8 @@
 #define TARGET_SPEED 30.0
 
 
-const char WIFI_SSID[] = "Yeetus";
-const char WIFI_PASSWORD[] = "182408092000";
+const char WIFI_SSID[] = "Yikes";
+const char WIFI_PASSWORD[] = "YeetusDeletus";
 float duty_cycle_left = 1;
 float duty_cycle_right = 1;
 bool obstacle_detected = false;
@@ -96,36 +98,53 @@ void motor_driver_task(__unused void *params)
     }
 }
 
-void IR_driver_task(__unused void *params)
+void wifi_task(__unused void *params)
 {
-    ir_sensor_init();
-    uint16_t leftResult, rightResult;
 
-    while (1)
+    if (cyw43_arch_init())
     {
-        if (!obstacle_detected){
-            ir_sensor_read(&leftResult, &rightResult);
-
-            if (leftResult > DETECTION_THRESHOLD && rightResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_stop();
-            }
-            else if (leftResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_right(duty_cycle_left,duty_cycle_right);
-            }
-            else if (rightResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_left(duty_cycle_left,duty_cycle_right);
-            }
-            else{
-                wall_detected = false;
-            }
-        }
-        else{
-            wall_detected = false;
-        }
+        printf("failed to initialise\n");
+        return;
     }
+    cyw43_arch_enable_sta_mode();
+    printf("Connecting to Wi-Fi...\n");
+    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000))
+    {
+        printf("failed to connect.\n");
+        exit(1);
+    }
+    else
+    {
+        printf("Connected.\n");
+    }
+
+    // Get and print the IP address
+    struct netif *netif = netif_default; // Get the default network interface
+    if (netif != NULL)
+    {
+        ip4_addr_t ipaddr = netif->ip_addr;
+        printf("IP Address: %s\n", ip4addr_ntoa(&ipaddr));
+    }
+
+    // Initialise web server
+    httpd_init();
+    printf("Http server initialised\n");
+
+    // Configure SSI and CGI handler
+    ssi_init();
+    printf("SSI Handler initialised\n");
+    cgi_init();
+    printf("CGI Handler initialised\n");
+
+    while (true)
+    {
+        // use of SSI to contstantly retrieve new info & display onto web interface
+        vTaskDelay(1000);
+
+        // printf("CONNECTED\n");
+    }
+
+    cyw43_arch_deinit();
 }
 
 void interruptHandler(uint gpio, uint32_t events)
@@ -139,6 +158,9 @@ void interruptHandler(uint gpio, uint32_t events)
     else if (gpio == RIGHT_ENCODER_PIN){
         rightWheelEncoderHandler();
     }
+    else if (gpio == IR_PIN){
+        barcode_scanning_interrupt(gpio, events);
+    }
 }
 
 void setupInterrupts()
@@ -146,19 +168,20 @@ void setupInterrupts()
     gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interruptHandler);
     gpio_set_irq_enabled(LEFT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true);
     gpio_set_irq_enabled(RIGHT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true);
+    gpio_set_irq_enabled(IR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 
 }
 
 void vLaunch(void)
 {
     // Declaring instances of our tasks
+    TaskHandle_t wifi_taskTask;
     // TaskHandle_t ledtask;
     TaskHandle_t motor_driverTask;
-    TaskHandle_t ir_driverTask;
 
+    xTaskCreate(wifi_task, "wifi_task_thread", configMINIMAL_STACK_SIZE, NULL, TEST_TASK_PRIORITY, &wifi_taskTask);
     xTaskCreate(motor_driver_task, "motor_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &motor_driverTask);
-    xTaskCreate(IR_driver_task, "irline_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &ir_driverTask);
-
+    setup_barcode();
     setupInterrupts();
     
 

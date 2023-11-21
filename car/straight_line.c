@@ -57,7 +57,7 @@ void motor_driver_task(__unused void *params)
     setupWheelEncoder();
     motor_initialize();
     motor_forward(duty_cycle_left, duty_cycle_right);
-    vTaskDelay(2000);
+    vTaskDelay(3000);
 
     while (1)
     {

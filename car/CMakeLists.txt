@@ -21,7 +21,7 @@ add_executable(turn turn.c)
 add_library(car_magnetnometer car_magnetnometer/car_magnetnometer.c car_magnetnometer/car_magnetnometer.h)
 add_library(car_ultrasonic car_ultrasonic/car_ultrasonic.c car_ultrasonic/car_ultrasonic.h)
 add_library(car_wheel_driver car_wheel_driver/car_wheel_driver.c car_wheel_driver/car_wheel_driver.h)
-add_library(car_irline car_irline/car_irline_sensor.c car_irline/car_irline_sensor.h)
+add_library(car_irline car_irline/car_irline_sensor.c car_irline/car_irline_sensor.h car_irline/car_ir_barcode.c car_irline/car_ir_barcode.h)
 add_library(car_wheel_encoder car_wheel_encoder/car_wheel_encoder.c car_wheel_encoder/car_wheel_encoder.h)
 add_library(car_pid_controller car_pid_controller/car_pid_controller.c car_pid_controller/car_pid_controller.h)
 
@@ -51,7 +51,6 @@ target_link_libraries(car_wheel_driver pico_stdlib hardware_pwm)
 target_link_libraries(car_irline pico_stdlib hardware_adc)
 target_link_libraries(car_wheel_encoder pico_stdlib)
 target_link_libraries(car_pid_controller pico_stdlib)
-
 
 target_compile_definitions(assembled_car PRIVATE
         # WIFI_SSID=\"${WIFI_SSID}\"

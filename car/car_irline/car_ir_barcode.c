@@ -3,12 +3,7 @@
 #include <string.h>
 #include "pico/stdlib.h"
 #include "hardware/adc.h"
-
-#define IR_PIN 28              // Assign GPIO Pin 28 as the ADC Input
-#define MAX_PULSE_READING_SIZE 200
-#define MAX_OUTPUT_SIZE 10
-#define TIMEOUT_MS 3000
-#define HASH_TABLE_SIZE 44
+#include "car_ir_barcode.h"
 
 uint16_t pulse_durations[MAX_PULSE_READING_SIZE];
 uint16_t temp_list[9];
@@ -123,7 +118,7 @@ void setup_adc(){
     adc_init();
     adc_gpio_init(IR_PIN);
     adc_set_temp_sensor_enabled(false);
-    adc_select_input(0);
+    adc_select_input(2);
  }
 
  void reset_pulse_durations(){
@@ -151,7 +146,6 @@ void insertion_sort(uint16_t arr[], uint16_t n) {
 
  bool check_for_asterisk(int end_index){
     int start_index = end_index - 8;
-    char asterisk_code[10] = "010010100\0"; // Asterisk *
     char reading[10] = "000000000\0";
 
     for (int i = start_index; i <= end_index; i++){
@@ -285,22 +279,9 @@ void barcode_scanning_interrupt(uint gpio, uint32_t events) {
     pulse_duration_index++;
 }
 
-void setup() {
-    stdio_usb_init();
+void setup_barcode() {
     setup_adc();
     setup_hash_table();
     gpio_init(IR_PIN);
     gpio_set_dir(IR_PIN, GPIO_IN);
-    gpio_set_irq_enabled_with_callback(IR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &barcode_scanning_interrupt);
  }
-
-int main() {
-    // Initialize necessary peripherals
-    setup();
-
-    while (1) { // Main code
-
-    }
-
-    return 0;
-}
