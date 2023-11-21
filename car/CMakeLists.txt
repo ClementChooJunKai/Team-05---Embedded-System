@@ -12,6 +12,10 @@ execute_process(COMMAND
 # Making executable file - assembled_car
 add_executable(assembled_car assembled_car.c)
 add_executable(straight_line straight_line.c)
+add_executable(straight_line ultrasonic.c)
+add_executable(straight_line scanner.c)
+add_executable(straight_line turn.c)
+
 
 # Creating libraries based on headers+c files of the different drivers
 add_library(car_magnetnometer car_magnetnometer/car_magnetnometer.c car_magnetnometer/car_magnetnometer.h)
@@ -28,6 +32,15 @@ target_include_directories(assembled_car PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}
 )
 target_include_directories(straight_line PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}
+)
+target_include_directories(ultrasonic PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}
+)
+target_include_directories(scanner PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}
+)
+target_include_directories(turn PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}
 )
 
@@ -49,6 +62,27 @@ target_compile_definitions(assembled_car PRIVATE
         )
 
 target_compile_definitions(straight_line PRIVATE
+        # WIFI_SSID=\"${WIFI_SSID}\"
+        # WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
+        NO_SYS=0            # don't want NO_SYS (generally this would be in your lwipopts.h)
+        LWIP_SOCKET=1
+        PICO_MAX_SHARED_IRQ_HANDLERS=5
+        )
+target_compile_definitions(ultrasonic PRIVATE
+        # WIFI_SSID=\"${WIFI_SSID}\"
+        # WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
+        NO_SYS=0            # don't want NO_SYS (generally this would be in your lwipopts.h)
+        LWIP_SOCKET=1
+        PICO_MAX_SHARED_IRQ_HANDLERS=5
+        )
+target_compile_definitions(scanner PRIVATE
+        # WIFI_SSID=\"${WIFI_SSID}\"
+        # WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
+        NO_SYS=0            # don't want NO_SYS (generally this would be in your lwipopts.h)
+        LWIP_SOCKET=1
+        PICO_MAX_SHARED_IRQ_HANDLERS=5
+        )
+target_compile_definitions(turn PRIVATE
         # WIFI_SSID=\"${WIFI_SSID}\"
         # WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
         NO_SYS=0            # don't want NO_SYS (generally this would be in your lwipopts.h)
@@ -88,15 +122,73 @@ target_link_libraries(  straight_line
                     car_irline
                 )
 
+target_link_libraries(  ultrasonic 
+                pico_stdlib 
+                pico_lwip_iperf 
+                FreeRTOS-Kernel-Heap4 
+                pico_cyw43_arch_lwip_sys_freertos
+                car_magnetnometer
+                car_ultrasonic
+                car_wheel_driver
+                car_wheel_encoder
+                car_pid_controller
+                pico_lwip_http
+                # hardware_adc
+                car_irline
+            )
+target_link_libraries(  scanner 
+            pico_stdlib 
+            pico_lwip_iperf 
+            FreeRTOS-Kernel-Heap4 
+            pico_cyw43_arch_lwip_sys_freertos
+            car_magnetnometer
+            car_ultrasonic
+            car_wheel_driver
+            car_wheel_encoder
+            car_pid_controller
+            pico_lwip_http
+            # hardware_adc
+            car_irline
+        )
+
+target_link_libraries(  turn 
+        pico_stdlib 
+        pico_lwip_iperf 
+        FreeRTOS-Kernel-Heap4 
+        pico_cyw43_arch_lwip_sys_freertos
+        car_magnetnometer
+        car_ultrasonic
+        car_wheel_driver
+        car_wheel_encoder
+        car_pid_controller
+        pico_lwip_http
+        # hardware_adc
+        car_irline
+    )
+
 # enable usb output onto serial monitor
 pico_enable_stdio_usb(assembled_car 1)
 pico_enable_stdio_usb(straight_line 1)
+pico_enable_stdio_usb(ultrasonic 1)
+pico_enable_stdio_usb(scanner 1)
+pico_enable_stdio_usb(turn 1)
+
+
 
 # create map/bin/hex/uf2 file etc.
 pico_add_extra_outputs(assembled_car)
 pico_add_extra_outputs(straight_line)
+pico_add_extra_outputs(ultrasonic)
+pico_add_extra_outputs(scanner)
+pico_add_extra_outputs(turn)
+
+
 
 # add url via pico_set_program_url
 example_auto_set_url(assembled_car)
 example_auto_set_url(straight_line)
+example_auto_set_url(ultrasonic)
+example_auto_set_url(scanner)
+example_auto_set_url(turn)
+
 
