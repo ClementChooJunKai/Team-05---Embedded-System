@@ -50,7 +50,39 @@ bool wall_detected = false;
 
 struct SSI_CarData_Struct ssi_car_data;
 
-
+void ultrasonic_driver_task(__unused void *params)
+{
+    setupUltrasonic(); // Initialize the ultrasonic sensor
+    while (1)
+    {
+        /*double distance = getDistance(); // Get the measured distance
+        printf("DISTANCE: %f", distance);
+        if (distance > 0.0 && distance < 20.0){
+            obstacle_detected = true;
+            motor_reverse(duty_cycle_left, duty_cycle_right);
+            while (getDistance() <= 20.0){
+            }
+            vTaskDelay(300);
+            motor_stop();
+            obstacle_detected = false;
+        }*/
+        printf("check1");
+        double distance = getDistance();
+        printf("DISTANCE: %f", distance);
+        if (distance > 0 && distance <= 15.0){
+            printf("check2");
+            obstacle_detected=true;
+            motor_reverse(duty_cycle_left, duty_cycle_right);
+            vTaskDelay(300);
+        }
+        if (obstacle_detected){
+            motor_stop();
+            obstacle_detected=false;
+        }
+        vTaskDelay(100);
+        //ssi_car_data.ultrasonic_distance = distance;
+    }
+}
 // TASK 3: Motor Driver (Includes wheel encoder)
 void motor_driver_task(__unused void *params)
 {
@@ -61,7 +93,7 @@ void motor_driver_task(__unused void *params)
 
     while (1)
     {
-        float current_left_speed = getLeftMotorSpeed();
+        /*float current_left_speed = getLeftMotorSpeed();
         float current_right_speed = getRightMotorSpeed();
         printf("Left speed: %f, Right speed: %f", current_left_speed, current_right_speed);
         if (current_left_speed == 0 || current_right_speed == 0){
@@ -87,44 +119,12 @@ void motor_driver_task(__unused void *params)
                 duty_cycle_right = 1;
             }
         }
-        printf("L:%f, R:%f", duty_cycle_left, duty_cycle_right);
+        printf("L:%f, R:%f", duty_cycle_left, duty_cycle_right);*/
 
         if (!obstacle_detected && !wall_detected){
             motor_forward(duty_cycle_left, duty_cycle_right);
         }
         vTaskDelay(1000);
-    }
-}
-
-void IR_driver_task(__unused void *params)
-{
-    ir_sensor_init();
-    uint16_t leftResult, rightResult;
-
-    while (1)
-    {
-        if (!obstacle_detected){
-            ir_sensor_read(&leftResult, &rightResult);
-
-            if (leftResult > DETECTION_THRESHOLD && rightResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_stop();
-            }
-            else if (leftResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_right(duty_cycle_left,duty_cycle_right);
-            }
-            else if (rightResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_left(duty_cycle_left,duty_cycle_right);
-            }
-            else{
-                wall_detected = false;
-            }
-        }
-        else{
-            wall_detected = false;
-        }
     }
 }
 
@@ -151,15 +151,15 @@ void setupInterrupts()
 
 void vLaunch(void)
 {
+    // setupInterrupts();
     // Declaring instances of our tasks
     // TaskHandle_t ledtask;
+    TaskHandle_t ultrasonic_driverTask;
     TaskHandle_t motor_driverTask;
-    TaskHandle_t ir_driverTask;
 
+    xTaskCreate(ultrasonic_driver_task, "ultrasonic_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &ultrasonic_driverTask);
     xTaskCreate(motor_driver_task, "motor_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &motor_driverTask);
-    xTaskCreate(IR_driver_task, "irline_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &ir_driverTask);
-
-    setupInterrupts();
+    
     
 
 #if NO_SYS && configUSE_CORE_AFFINITY && configNUM_CORES > 1

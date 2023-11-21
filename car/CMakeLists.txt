@@ -12,9 +12,9 @@ execute_process(COMMAND
 # Making executable file - assembled_car
 add_executable(assembled_car assembled_car.c)
 add_executable(straight_line straight_line.c)
-add_executable(straight_line ultrasonic.c)
-add_executable(straight_line scanner.c)
-add_executable(straight_line turn.c)
+add_executable(ultrasonic ultrasonic.c)
+add_executable(scanner scanner.c)
+add_executable(turn turn.c)
 
 
 # Creating libraries based on headers+c files of the different drivers

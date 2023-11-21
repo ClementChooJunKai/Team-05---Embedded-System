@@ -12,21 +12,17 @@
 static absolute_time_t start_time;
 static absolute_time_t end_time;
 //static bool rising_edge = true;
-int32_t durations_us[NUM_READINGS];
 
 
-void ultrasonicHandler(uint32_t events)
+void ultrasonicHandler(uint gpio, uint32_t events)
 {
-    static int index = 0;
-    if (events == GPIO_IRQ_EDGE_RISE) {
+    if (events == GPIO_IRQ_EDGE_RISE) 
+    {
         start_time = get_absolute_time(); // Record the time of a rising edge
-    } else if (events == GPIO_IRQ_EDGE_FALL) {
+    } 
+    else if (events == GPIO_IRQ_EDGE_FALL) 
+    {
         end_time = get_absolute_time(); // Record the time of a falling edge
-        durations_us[index] = absolute_time_diff_us(start_time, end_time);
-        index++;
-        if (index >= NUM_READINGS){
-            index = 0;
-        }
     }
 }
 
@@ -41,23 +37,33 @@ void setupUltrasonic() {
     gpio_set_dir(ULTRASONIC_ECHO_PIN, GPIO_IN); // Set the ECHO pin as an input
 
     // Configure interrupts to capture rising and falling edges of the ECHO pin
-    // gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &echo_pin_handler);
+    gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &ultrasonicHandler);
 
     gpio_put(ULTRASONIC_TRIG_PIN, false); // Set the ULTRASONIC_TRIG_PIN pin low initially
 }
 
 double getDistance() {
 
+    gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &ultrasonicHandler);
+
     double totalDistance = 0.0;
-    
-    for (int i = 0; i < NUM_READINGS; i++){
-        totalDistance += durations_us[i];
-
+    for (int i = 0; i < NUM_READINGS; i++) {
+        // Send a trigger pulse
+        gpio_put(ULTRASONIC_TRIG_PIN, true);
+        sleep_us(10); // Keep it high for 10 microseconds
+        gpio_put(ULTRASONIC_TRIG_PIN, false); // Set the TRIG pin low
+        
+        // Calculate the distance based on the timestamps
+        int32_t duration_us = absolute_time_diff_us(start_time, end_time);
+        double distance = duration_us / 58.0f; // Convert to centimeters (approximate)
+        if (distance > 0.0 && distance < 400.0) { // Check if the distance is within a valid range
+            totalDistance += distance;
+        }
     }
-
     if (totalDistance > 0.0) {
-        return totalDistance / NUM_READINGS; // Calculate the average distance
-    } else {
+        return totalDistance/NUM_READINGS;
+    } 
+    else {
         return -1.0; // Return -1 for Measurement Timeout
     }
 }
