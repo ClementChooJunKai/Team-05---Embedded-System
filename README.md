@@ -1,10 +1,11 @@
 # Team-05---Embedded-System
 
-This GitHub repository contains the source code and documentation for a project aimed at creating an intelligent autonomous 2-wheel robot car. The project utilizes the Raspberry Pi Pico microcontroller, various sensors, and a PID (Proportional-Integral-Derivative) controller to achieve efficient navigation, obstacle avoidance, and barcode recognition.
+This repository houses the source code and documentation for an intelligent autonomous 2-wheel robot car project. Leveraging the Raspberry Pi Pico microcontroller, diverse sensors, and a PID (Proportional-Integral-Derivative) controller, the project focuses on efficient navigation, obstacle avoidance, and barcode recognition.
 
-Project Description
-The primary goal of this project is to develop a robot car capable of navigating a predefined track, efficiently avoiding obstacles, and recognizing barcodes using infrared sensors. The integration of a PID controller enhances the car's control system, ensuring smooth and accurate motion during navigation and barcode scanning.
+## Project Description
+The primary goal is to create a robot car capable of navigating predefined tracks, adeptly avoiding obstacles, and recognizing barcodes via infrared sensors. The incorporation of a PID controller enhances the control system, ensuring precise motion during navigation and barcode scanning.
 
+### Key Features
 | Feature              | Description                                                                                                     |
 |----------------------|-----------------------------------------------------------------------------------------------------------------|
 | Motor Sensor         | Initiates simple movements in various directions: left, right, up, and down using the motor.                    |
@@ -14,7 +15,6 @@ The primary goal of this project is to develop a robot car capable of navigating
 | IR Sensors           | Utilizes infrared sensors for line tracking and barcode detection.                                                 |
 | Magnetometer         | Utilizes a magnetometer to obtain compass bearing values.                                                           |
 | Filter Data          | Applies filtering techniques to improve accuracy and precision of sensor data.                                    |
-
 
 ## GPIO Pins
 | `Pin Number`| `Usage`       | `Sensor`      |
