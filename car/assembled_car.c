@@ -163,35 +163,44 @@ void motor_driver_task(__unused void *params)
 
 void IR_driver_task(__unused void *params)
 {
-    ir_sensor_init();
-    uint16_t leftResult, rightResult;
+    ir_sensor_init(); // Initialize IR sensors
 
-    while (1)
+    uint16_t leftResult, rightResult; // Variables to store sensor readings
+
+    while (1) // Infinite loop for continuous operation
     {
-        if (!obstacle_detected){
-            ir_sensor_read(&leftResult, &rightResult);
+        if (!obstacle_detected) // Check if no obstacle is detected
+        {
+            ir_sensor_read(&leftResult, &rightResult); // Read sensor values
 
-            if (leftResult > DETECTION_THRESHOLD && rightResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_stop();
+            // Check conditions based on sensor readings
+            if (leftResult > DETECTION_THRESHOLD && rightResult > DETECTION_THRESHOLD)
+            {
+                wall_detected = true; // Set flag for wall detection
+                motor_stop(); // Stop the motor
             }
-            else if (leftResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_right(duty_cycle_left,duty_cycle_right);
+            else if (leftResult > DETECTION_THRESHOLD)
+            {
+                wall_detected = true; // Set flag for wall detection
+                motor_rotate_right(duty_cycle_left, duty_cycle_right); // Rotate right
             }
-            else if (rightResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_left(duty_cycle_left,duty_cycle_right);
+            else if (rightResult > DETECTION_THRESHOLD)
+            {
+                wall_detected = true; // Set flag for wall detection
+                motor_rotate_left(duty_cycle_left, duty_cycle_right); // Rotate left
             }
-            else{
-                wall_detected = false;
+            else
+            {
+                wall_detected = false; // No obstacle detected, clear flag
             }
         }
-        else{
-            wall_detected = false;
+        else
+        {
+            wall_detected = false; // Clear flag if obstacle detected elsewhere
         }
     }
 }
+
 
 void wifi_task(__unused void *params)
 {

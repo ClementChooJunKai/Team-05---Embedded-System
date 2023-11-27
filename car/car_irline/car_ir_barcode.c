@@ -1,3 +1,4 @@
+// Include necessary libraries
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,11 +6,13 @@
 #include "hardware/adc.h"
 #include "car_ir_barcode.h"
 
+// Define arrays and variables for pulse durations, thresholds, and data storage
 uint16_t pulse_durations[MAX_PULSE_READING_SIZE];
 uint16_t temp_list[9];
 char output[MAX_OUTPUT_SIZE];
 int threshold;
 
+// Define structures for the hash table
 typedef struct KeyValuePair {
     char key[10];
     char value;
@@ -23,6 +26,7 @@ typedef struct {
 
 HashTable code39Table;
 
+// Computes a hash value based on the ASCII sum of the key
 int hashFunction(const char* key) {
     // A simple hash function using the sum of ASCII values
     int hash = 0;
@@ -31,14 +35,14 @@ int hashFunction(const char* key) {
     }
     return hash % HASH_TABLE_SIZE;
 }
-
+// Initializes the hash table, setting all table entries to NULL
 void initializeHashTable(HashTable* hashTable) {
     hashTable->size = HASH_TABLE_SIZE;
     for (int i = 0; i < HASH_TABLE_SIZE; ++i) {
         hashTable->table[i] = NULL;
     }
 }
-
+// Inserts a key-value pair into the hash table
 void insert(HashTable* hashTable, const char* key, char value) {
     int index = hashFunction(key);
     KeyValuePair* newPair = (KeyValuePair*)malloc(sizeof(KeyValuePair));
@@ -48,7 +52,7 @@ void insert(HashTable* hashTable, const char* key, char value) {
     newPair->next = hashTable->table[index];
     hashTable->table[index] = newPair;
 }
-
+// Searches for a key in the hash table and returns the corresponding value
 char search(HashTable* hashTable, const char* key) {
     int index = hashFunction(key);
     KeyValuePair* current = hashTable->table[index];
@@ -60,7 +64,7 @@ char search(HashTable* hashTable, const char* key) {
     }
     return '?';  // Key not found
 }
-
+// Initializes the code39Table with predefined key-value pairs
 void setup_hash_table(){
     
     initializeHashTable(&code39Table);
@@ -113,20 +117,20 @@ void setup_hash_table(){
     insert(&code39Table, "000101010\0", '%');
     insert(&code39Table, "010010100\0", '*');
 }
-
+// Initializes ADC for IR sensor readings
 void setup_adc(){
     adc_init();
     adc_gpio_init(IR_PIN);
     adc_set_temp_sensor_enabled(false);
     adc_select_input(2);
  }
-
+// Resets all elements in the pulse_durations array to zero
  void reset_pulse_durations(){
     for (int i = 0; i < MAX_PULSE_READING_SIZE; i++){
         pulse_durations[i] = 0;
     }
  }
-
+// Sorts an array using insertion sort algorithm
 void insertion_sort(uint16_t arr[], uint16_t n) {
     uint16_t i, key, j;
     for (i = 1; i < n; i++) {
@@ -143,7 +147,7 @@ void insertion_sort(uint16_t arr[], uint16_t n) {
         }
     }
 }
-
+// Checks for the presence of a start character (*) in the barcode
  bool check_for_asterisk(int end_index){
     int start_index = end_index - 8;
     char reading[10] = "000000000\0";
@@ -170,7 +174,7 @@ void insertion_sort(uint16_t arr[], uint16_t n) {
         return false;
     }
  }
-
+// Identifies a character based on pulse durations and hash table lookup
 char identify_character(int end_index){
     char search_key[10] = "000000000\0";
     int start_index = end_index - 8;
@@ -181,7 +185,7 @@ char identify_character(int end_index){
     }
     return search(&code39Table, search_key);
  }
-
+// Adds a character to a string if it doesn't exceed the maximum size
 bool add_char_to_string(char* str, char c, int max_size){
     int len = strlen(str);
     if (len < max_size - 1){
@@ -193,28 +197,33 @@ bool add_char_to_string(char* str, char c, int max_size){
         return false;
     }
  }
+// Interrupt handler for barcode scanning
 
 void barcode_scanning_interrupt(uint gpio, uint32_t events) {
-
+    // Maintain the index of the current pulse duration and the time of the previous pulse
     static int pulse_duration_index = 0;
     static uint32_t previous_time = 0;
 
+    // Get the current time in microseconds
     uint32_t current_time = time_us_32();
 
+    // Calculate the duration of the current pulse in microseconds and milliseconds
     uint32_t pulse_duration_us = current_time - previous_time;
     uint32_t pulse_duration_ms = pulse_duration_us / 1000;
     previous_time = current_time;
 
+    // Maintain the scanning state and the index of the next expected character
     static bool scanning = false;
     static int next_char_index;
 
+    // Print the duration of the current pulse in milliseconds
     printf("%d ms\n", pulse_duration_ms);
 
-
-    if (pulse_duration_ms < TIMEOUT_MS){
+    // Check if the pulse duration is within the timeout range
+    if (pulse_duration_ms < TIMEOUT_MS) {
         pulse_durations[pulse_duration_index] = pulse_duration_ms;
-    } 
-    else{
+    } else {
+        // Reset variables and scanning state if timeout exceeds
         reset_pulse_durations();
         pulse_duration_index = 0;
         next_char_index = 0;
@@ -222,8 +231,8 @@ void barcode_scanning_interrupt(uint gpio, uint32_t events) {
         return;
     }
 
-    
-    if ((pulse_duration_index > MAX_PULSE_READING_SIZE) || (next_char_index > MAX_PULSE_READING_SIZE)){
+    // Check if the pulse duration index exceeds the maximum size or reading limit
+    if ((pulse_duration_index > MAX_PULSE_READING_SIZE) || (next_char_index > MAX_PULSE_READING_SIZE)) {
         printf("\nReading limit exceeded. Resetting..\n");
         reset_pulse_durations();
         pulse_duration_index = 0;
@@ -232,26 +241,27 @@ void barcode_scanning_interrupt(uint gpio, uint32_t events) {
         return;
     }
 
-
-    if (pulse_duration_index >= 8 && !scanning){
+    // Check for the start of a barcode sequence and initiate scanning if found
+    if (pulse_duration_index >= 8 && !scanning) {
         scanning = check_for_asterisk(pulse_duration_index);
-        if (scanning){
+        if (scanning) {
             output[0] = '\0';
             next_char_index = pulse_duration_index + 10;
         }
     }
-    if (scanning && (pulse_duration_index == next_char_index)){
+
+    // Process scanned characters if scanning is active and the expected index is reached
+    if (scanning && (pulse_duration_index == next_char_index)) {
         char scanned_char = identify_character(pulse_duration_index);
-        if (pulse_durations[pulse_duration_index - 9] > threshold || scanned_char == '?'){
+        if (pulse_durations[pulse_duration_index - 9] > threshold || scanned_char == '?') {
             printf("\nUnexpected value detected. Resetting...\n");
             reset_pulse_durations();
             pulse_duration_index = 0;
             next_char_index = 0;
             scanning = false;
             return;
-        }
-        else{
-            if (scanned_char == '*'){
+        } else {
+            if (scanned_char == '*') {
                 printf("\nEnd character detected. Output: ");
                 printf(output);
                 printf("\n");
@@ -260,12 +270,11 @@ void barcode_scanning_interrupt(uint gpio, uint32_t events) {
                 next_char_index = 0;
                 scanning = false;
                 return;
-            }
-            else{
-                if (add_char_to_string(output, scanned_char, MAX_OUTPUT_SIZE)){
+            } else {
+                // Add the scanned character to the output string if space available
+                if (add_char_to_string(output, scanned_char, MAX_OUTPUT_SIZE)) {
                     next_char_index += 10;
-                }
-                else{
+                } else {
                     printf("\nMax output exceeded, resetting.\n");
                     reset_pulse_durations();
                     pulse_duration_index = 0;
@@ -276,9 +285,10 @@ void barcode_scanning_interrupt(uint gpio, uint32_t events) {
             }
         }
     }
+    // Move to the next pulse duration index
     pulse_duration_index++;
 }
-
+// Sets up necessary components for barcode scanning
 void setup_barcode() {
     setup_adc();
     setup_hash_table();

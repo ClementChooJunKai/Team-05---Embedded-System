@@ -54,76 +54,98 @@ struct SSI_CarData_Struct ssi_car_data;
 // TASK 3: Motor Driver (Includes wheel encoder)
 void motor_driver_task(__unused void *params)
 {
-    setupWheelEncoder();
-    motor_initialize();
-    motor_forward(duty_cycle_left, duty_cycle_right);
-    vTaskDelay(3000);
+    setupWheelEncoder(); // Set up wheel encoders for speed calculation
+    motor_initialize(); // Initialize the motor
+    motor_forward(duty_cycle_left, duty_cycle_right); // Move forward initially
+    vTaskDelay(3000); // Wait for 3 seconds for motor initialization
 
-    while (1)
+    while (1) // Continuous operation
     {
+        // Read current speed of left and right motors
         float current_left_speed = getLeftMotorSpeed();
         float current_right_speed = getRightMotorSpeed();
         printf("Left speed: %f, Right speed: %f", current_left_speed, current_right_speed);
-        if (current_left_speed == 0 || current_right_speed == 0){
-            duty_cycle_left = 1;
+
+        // Adjust motor duty cycles based on speed feedback and PID control
+        if (current_left_speed == 0 || current_right_speed == 0)
+        {
+            duty_cycle_left = 1; // Reset duty cycles to default if speed is zero
             duty_cycle_right = 1;
         }
         else
         {
+            // Calculate target speed as an average of current speeds
             float target_speed = (current_left_speed + current_right_speed) / 2;
+            
+            // Perform PID calculations for left and right motors
             float pid_out_left = pidUpdateLeft(target_speed, current_left_speed);
             float pid_out_right = pidUpdateRight(target_speed, current_right_speed);
             printf("Pid_L:%f Pid_R:%f", pid_out_left, pid_out_right);
+            
+            // Update duty cycles based on PID outputs
             duty_cycle_left += pid_out_left;
             duty_cycle_right += pid_out_right;
 
-            // Ensure duty cycle remains within valid range (0 to 1)
-            if (duty_cycle_left > 1.0 || duty_cycle_left < 0.0) {
-                resetLeftIntegral();
-                duty_cycle_left = 1;
-            } 
-            if (duty_cycle_right > 1.0 || duty_cycle_right < 0.0) {
-                resetRightIntegral();
-                duty_cycle_right = 1;
+            // Ensure duty cycles remain within a valid range (0 to 1)
+            if (duty_cycle_left > 1.0 || duty_cycle_left < 0.0)
+            {
+                resetLeftIntegral(); // Reset integral term for PID
+                duty_cycle_left = 1; // Clamp duty cycle to 1 or 0 if out of range
+            }
+            if (duty_cycle_right > 1.0 || duty_cycle_right < 0.0)
+            {
+                resetRightIntegral(); // Reset integral term for PID
+                duty_cycle_right = 1; // Clamp duty cycle to 1 or 0 if out of range
             }
         }
         printf("L:%f, R:%f", duty_cycle_left, duty_cycle_right);
 
-        if (!obstacle_detected && !wall_detected){
+        // Move forward if no obstacle or wall detected
+        if (!obstacle_detected && !wall_detected)
+        {
             motor_forward(duty_cycle_left, duty_cycle_right);
         }
-        vTaskDelay(1000);
+        vTaskDelay(1000); // Delay for 1 second
     }
 }
 
+
 void IR_driver_task(__unused void *params)
 {
-    ir_sensor_init();
-    uint16_t leftResult, rightResult;
+    ir_sensor_init(); // Initialize IR sensors
 
-    while (1)
+    uint16_t leftResult, rightResult; // Variables to store sensor readings
+
+    while (1) // Continuous operation
     {
-        if (!obstacle_detected){
-            ir_sensor_read(&leftResult, &rightResult);
+        if (!obstacle_detected) // Check if no obstacle is detected
+        {
+            ir_sensor_read(&leftResult, &rightResult); // Read sensor values
 
-            if (leftResult > DETECTION_THRESHOLD && rightResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_stop();
+            // Check conditions based on sensor readings
+            if (leftResult > DETECTION_THRESHOLD && rightResult > DETECTION_THRESHOLD)
+            {
+                wall_detected = true; // Set flag for wall detection
+                motor_stop(); // Stop the motor
             }
-            else if (leftResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_right(duty_cycle_left,duty_cycle_right);
+            else if (leftResult > DETECTION_THRESHOLD)
+            {
+                wall_detected = true; // Set flag for wall detection
+                motor_rotate_right(duty_cycle_left, duty_cycle_right); // Rotate right
             }
-            else if (rightResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_left(duty_cycle_left,duty_cycle_right);
+            else if (rightResult > DETECTION_THRESHOLD)
+            {
+                wall_detected = true; // Set flag for wall detection
+                motor_rotate_left(duty_cycle_left, duty_cycle_right); // Rotate left
             }
-            else{
-                wall_detected = false;
+            else
+            {
+                wall_detected = false; // No obstacle detected, clear flag
             }
         }
-        else{
-            wall_detected = false;
+        else
+        {
+            wall_detected = false; // Clear flag if obstacle detected elsewhere
         }
     }
 }
