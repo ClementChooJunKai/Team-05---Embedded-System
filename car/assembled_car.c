@@ -165,7 +165,7 @@ void IR_driver_task(__unused void *params)
     xyz_struct magnetnometer_readings;
     int32_t compass_degree;
 
-    while (1)
+    while (1) // Infinite loop for continuous operation
     {
         vTaskDelay(50);
         if (!obstacle_detected){
@@ -188,24 +188,28 @@ void IR_driver_task(__unused void *params)
                     vTaskDelay(350);
                 }
             }
-            else if (leftResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_right(duty_cycle_left,duty_cycle_right);
+            else if (leftResult > DETECTION_THRESHOLD)
+            {
+                wall_detected = true; // Set flag for wall detection
+                motor_rotate_right(duty_cycle_left, duty_cycle_right); // Rotate right
             }
-            else if (rightResult > DETECTION_THRESHOLD){
-                wall_detected = true;
-                motor_rotate_left(duty_cycle_left,duty_cycle_right);
+            else if (rightResult > DETECTION_THRESHOLD)
+            {
+                wall_detected = true; // Set flag for wall detection
+                motor_rotate_left(duty_cycle_left, duty_cycle_right); // Rotate left
             }
             else{
                 wall_detected = false;
                 motor_forward(duty_cycle_left, duty_cycle_right);
             }
         }
-        else{
-            wall_detected = false;
+        else
+        {
+            wall_detected = false; // Clear flag if obstacle detected elsewhere
         }
     }
 }
+
 
 void wifi_task(__unused void *params)
 {
