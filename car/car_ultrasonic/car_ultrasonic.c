@@ -14,7 +14,7 @@ static absolute_time_t end_time;
 //static bool rising_edge = true;
 
 
-void ultrasonicHandler(uint gpio, uint32_t events)
+void ultrasonicHandler(uint32_t events)
 {
     if (events == GPIO_IRQ_EDGE_RISE) 
     {
@@ -37,14 +37,12 @@ void setupUltrasonic() {
     gpio_set_dir(ULTRASONIC_ECHO_PIN, GPIO_IN); // Set the ECHO pin as an input
 
     // Configure interrupts to capture rising and falling edges of the ECHO pin
-    gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &ultrasonicHandler);
+    // gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &ultrasonicHandler);
 
     gpio_put(ULTRASONIC_TRIG_PIN, false); // Set the ULTRASONIC_TRIG_PIN pin low initially
 }
 
 double getDistance() {
-
-    gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &ultrasonicHandler);
 
     double totalDistance = 0.0;
     for (int i = 0; i < NUM_READINGS; i++) {

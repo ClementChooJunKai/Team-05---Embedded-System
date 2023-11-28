@@ -50,6 +50,57 @@ bool wall_detected = false;
 
 struct SSI_CarData_Struct ssi_car_data;
 
+void ultrasonic_driver_task(__unused void *params)
+{
+    setupUltrasonic(); // Initialize the ultrasonic sensor
+    while (1)
+    {
+        /*double distance = getDistance(); // Get the measured distance
+        printf("DISTANCE: %f", distance);
+        if (distance > 0.0 && distance < 20.0){
+            obstacle_detected = true;
+            motor_reverse(duty_cycle_left, duty_cycle_right);
+            while (getDistance() <= 20.0){
+            }
+            vTaskDelay(300);
+            motor_stop();
+            obstacle_detected = false;
+        }*/
+        printf("check1\n");
+        double distance = getDistance();
+        printf("DISTANCE: %f\n", distance);
+        // if (distance > 0 && distance <= 15.0){
+        //     printf("check2");
+        //     obstacle_detected=true;
+        //     motor_reverse(duty_cycle_left, duty_cycle_right);
+        //     vTaskDelay(300);
+        // }
+        // if (obstacle_detected){
+        //     motor_stop();
+        //     obstacle_detected=false;
+        // }
+
+        if (distance > 0 && distance <= 20.0)
+        {
+            // sleep_ms(10);
+            motor_stop();
+            obstacle_detected = true;
+            motor_reverse(duty_cycle_left, duty_cycle_right);
+        }
+        else
+        {
+            // Allow motor to continue reversing for a short while
+            if (obstacle_detected == true)
+            {
+                vTaskDelay(50);
+                motor_stop();
+                obstacle_detected = false;
+            }
+        }
+        vTaskDelay(100);
+        // ssi_car_data.ultrasonic_distance = distance;
+    }
+}
 
 // TASK 3: Motor Driver (Includes wheel encoder)
 void motor_driver_task(__unused void *params)
@@ -128,10 +179,59 @@ void IR_driver_task(__unused void *params)
     }
 }
 
+void wifi_task(__unused void *params)
+{
+
+    if (cyw43_arch_init())
+    {
+        printf("failed to initialise\n");
+        return;
+    }
+    cyw43_arch_enable_sta_mode();
+    printf("Connecting to Wi-Fi...\n");
+    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000))
+    {
+        printf("failed to connect.\n");
+        exit(1);
+    }
+    else
+    {
+        printf("Connected.\n");
+    }
+
+    // Get and print the IP address
+    struct netif *netif = netif_default; // Get the default network interface
+    if (netif != NULL)
+    {
+        ip4_addr_t ipaddr = netif->ip_addr;
+        printf("IP Address: %s\n", ip4addr_ntoa(&ipaddr));
+    }
+
+    // Initialise web server
+    httpd_init();
+    printf("Http server initialised\n");
+
+    // Configure SSI and CGI handler
+    ssi_init();
+    printf("SSI Handler initialised\n");
+    cgi_init();
+    printf("CGI Handler initialised\n");
+
+    while (true)
+    {
+        // use of SSI to contstantly retrieve new info & display onto web interface
+        vTaskDelay(1000);
+
+        // printf("CONNECTED\n");
+    }
+
+    cyw43_arch_deinit();
+}
+
 void interruptHandler(uint gpio, uint32_t events)
 {
     if (gpio == ULTRASONIC_ECHO_PIN){
-        //ultrasonicHandler(events);
+        ultrasonicHandler(events);
     }
     else if (gpio == LEFT_ENCODER_PIN){
         leftWheelEncoderHandler();
@@ -153,9 +253,13 @@ void vLaunch(void)
 {
     // Declaring instances of our tasks
     // TaskHandle_t ledtask;
+    TaskHandle_t wifi_taskTask;
+    TaskHandle_t ultrasonic_driverTask;
     TaskHandle_t motor_driverTask;
     TaskHandle_t ir_driverTask;
 
+    xTaskCreate(wifi_task, "wifi_task_thread", configMINIMAL_STACK_SIZE, NULL, TEST_TASK_PRIORITY, &wifi_taskTask);
+    xTaskCreate(ultrasonic_driver_task, "ultrasonic_driver_thread", configMINIMAL_STACK_SIZE, NULL, 3, &ultrasonic_driverTask);
     xTaskCreate(motor_driver_task, "motor_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &motor_driverTask);
     xTaskCreate(IR_driver_task, "irline_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &ir_driverTask);
 

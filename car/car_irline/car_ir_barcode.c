@@ -117,6 +117,7 @@ void setup_hash_table(){
 void setup_adc(){
     adc_init();
     adc_gpio_init(IR_PIN);
+    gpio_set_dir(IR_PIN, GPIO_IN);
     adc_set_temp_sensor_enabled(false);
     adc_select_input(2);
  }
@@ -199,10 +200,17 @@ void barcode_scanning_interrupt(uint gpio, uint32_t events) {
     static int pulse_duration_index = 0;
     static uint32_t previous_time = 0;
 
+    if (gpio != IR_PIN){
+        return;
+    }
+
     uint32_t current_time = time_us_32();
 
     uint32_t pulse_duration_us = current_time - previous_time;
     uint32_t pulse_duration_ms = pulse_duration_us / 1000;
+    if (pulse_duration_ms < 1){
+        return;
+    }
     previous_time = current_time;
 
     static bool scanning = false;
@@ -282,6 +290,4 @@ void barcode_scanning_interrupt(uint gpio, uint32_t events) {
 void setup_barcode() {
     setup_adc();
     setup_hash_table();
-    gpio_init(IR_PIN);
-    gpio_set_dir(IR_PIN, GPIO_IN);
  }

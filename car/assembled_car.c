@@ -9,7 +9,9 @@
 #include "car_ultrasonic/car_ultrasonic.h"
 #include "car_wheel_driver/car_wheel_driver.h"
 #include "car_irline/car_irline_sensor.h"
+#include "car_irline/car_ir_barcode.h"
 #include "car_wheel_encoder/car_wheel_encoder.h"
+#include "car_pid_controller/car_pid_controller.h"
 #include "car_pid_controller/car_pid_controller.h"
 
 
@@ -41,23 +43,25 @@
 #define TARGET_SPEED 30.0
 
 
+#define TARGET_SPEED 30.0
+
+
 const char WIFI_SSID[] = "Yeetus";
 const char WIFI_PASSWORD[] = "182408092000";
-float duty_cycle_left = 1;
-float duty_cycle_right = 0.6;
+float duty_cycle_left = 0.7;
+float duty_cycle_right = 0.7;
 bool obstacle_detected = false;
 bool wall_detected = false;
 
 struct SSI_CarData_Struct ssi_car_data;
 
 
-// TASK 1: magnetnometer Driver
+
 void magnetnometer_driver_task(__unused void *params)
 {
     init_i2c_and_sensors(); // Inititalizes I2C Port & setups sensors
     xyz_struct magnetnometer_readings, accelerometer_readings;
     xyz_struct_float accelerometer_readings_in_Gs;
-
     while (1)
     {
         // test_sensor_connection();
@@ -65,14 +69,11 @@ void magnetnometer_driver_task(__unused void *params)
         int32_t compass_degree = convert_to_degrees(&magnetnometer_readings);
         // printf("X = %d, Y = %d, Z = %d\n", magnetnometer_readings.x, magnetnometer_readings.y, magnetnometer_readings.z);
         printf("Magnetic North: %d degrees\n", compass_degree);
-
         get_accelerometer_xyz_values(&accelerometer_readings);
         convert_accelerometer_to_Gs(&accelerometer_readings, &accelerometer_readings_in_Gs);
-
         // printf("\nData:\n");
         // printf("X = %d, Y = %d, Z = %d\n", accelerometer_readings.x, accelerometer_readings.y, accelerometer_readings.z);
         // printf("X = %.2f, Y = %.2f, Z = %.2f\n", accelerometer_readings_in_Gs.x, accelerometer_readings_in_Gs.y, accelerometer_readings_in_Gs.z);
-
         ssi_car_data.compass_degree = compass_degree;
         ssi_car_data.accelerometer_readings_in_Gs.x = accelerometer_readings_in_Gs.x;
         ssi_car_data.accelerometer_readings_in_Gs.y = accelerometer_readings_in_Gs.y;
@@ -81,34 +82,30 @@ void magnetnometer_driver_task(__unused void *params)
     }
 }
 
-// TASK 2: Ultrasonic Driver
+
 void ultrasonic_driver_task(__unused void *params)
 {
     setupUltrasonic(); // Initialize the ultrasonic sensor
-    for (int i = 0; i < 20; i++){
-        gpio_put(ULTRASONIC_TRIG_PIN, true);
-        sleep_us(10); // Keep it high for 10 microseconds
-        gpio_put(ULTRASONIC_TRIG_PIN, false); // Set the TRIG pin low
-    }
     while (1)
     {
-        gpio_put(ULTRASONIC_TRIG_PIN, true);
-        sleep_us(10); // Keep it high for 10 microseconds
-        gpio_put(ULTRASONIC_TRIG_PIN, false); // Set the TRIG pin low
-        //double distance = getDistance(); // Get the measured distance
-        if (distance >= 0.0 && distance < 20.0){
+        double distance = getDistance();
+        // printf("DISTANCE: %f\n", distance);
+        if (distance > 0 && distance <= 20.0)
+        {
+            // sleep_ms(10);
+            motor_stop();
             obstacle_detected = true;
             motor_reverse(duty_cycle_left, duty_cycle_right);
-            while (distance > 0 && distance <= 20.0){
-                distance = getDistance();
+        }
+        else
+        {
+            // Allow motor to continue reversing for a short while
+            if (obstacle_detected == true)
+            {
                 vTaskDelay(50);
+                motor_stop();
+                obstacle_detected = false;
             }
-            obstacle_detected=false;
-        }
-        else if (distance < 0){
-        }
-        else{
-            obstacle_detected=false;
         }
         vTaskDelay(100);
         ssi_car_data.ultrasonic_distance = distance;
@@ -121,7 +118,7 @@ void motor_driver_task(__unused void *params)
     setupWheelEncoder();
     motor_initialize();
     motor_forward(duty_cycle_left, duty_cycle_right);
-    vTaskDelay(2000);
+    vTaskDelay(3000);
 
     while (1)
     {
@@ -130,7 +127,7 @@ void motor_driver_task(__unused void *params)
         printf("Left speed: %f, Right speed: %f", current_left_speed, current_right_speed);
         if (current_left_speed == 0 || current_right_speed == 0){
             duty_cycle_left = 1;
-            duty_cycle_right = 0.6;
+            duty_cycle_right = 1;
         }
         else
         {
@@ -148,10 +145,9 @@ void motor_driver_task(__unused void *params)
             } 
             if (duty_cycle_right > 1.0 || duty_cycle_right < 0.0) {
                 resetRightIntegral();
-                duty_cycle_right = 0.6;
+                duty_cycle_right = 1;
             }
         }
-
         printf("L:%f, R:%f", duty_cycle_left, duty_cycle_right);
 
         if (!obstacle_detected && !wall_detected){
@@ -164,16 +160,33 @@ void motor_driver_task(__unused void *params)
 void IR_driver_task(__unused void *params)
 {
     ir_sensor_init();
+    //setup_barcode();
     uint16_t leftResult, rightResult;
+    xyz_struct magnetnometer_readings;
+    int32_t compass_degree;
 
     while (1)
     {
+        vTaskDelay(50);
         if (!obstacle_detected){
             ir_sensor_read(&leftResult, &rightResult);
 
             if (leftResult > DETECTION_THRESHOLD && rightResult > DETECTION_THRESHOLD){
                 wall_detected = true;
                 motor_stop();
+                vTaskDelay(100);
+                get_magnetnometer_xyz_values(&magnetnometer_readings);
+                compass_degree = convert_to_degrees(&magnetnometer_readings);
+                printf("Magnetic North: %d degrees\n", compass_degree);
+                motor_reverse_right(duty_cycle_left, duty_cycle_right);
+                
+                ir_sensor_read(&leftResult, &rightResult);
+                if (leftResult > DETECTION_THRESHOLD && rightResult > DETECTION_THRESHOLD){
+                    motor_forward_left(duty_cycle_left, duty_cycle_right);
+                    vTaskDelay(350);
+                    motor_reverse_left(duty_cycle_left, duty_cycle_right);
+                    vTaskDelay(350);
+                }
             }
             else if (leftResult > DETECTION_THRESHOLD){
                 wall_detected = true;
@@ -185,6 +198,7 @@ void IR_driver_task(__unused void *params)
             }
             else{
                 wall_detected = false;
+                motor_forward(duty_cycle_left, duty_cycle_right);
             }
         }
         else{
@@ -195,7 +209,6 @@ void IR_driver_task(__unused void *params)
 
 void wifi_task(__unused void *params)
 {
-
     if (cyw43_arch_init())
     {
         printf("failed to initialise\n");
@@ -233,6 +246,8 @@ void wifi_task(__unused void *params)
 
     while (true)
     {
+        printf("test");
+
         // use of SSI to contstantly retrieve new info & display onto web interface
         vTaskDelay(1000);
 
@@ -253,6 +268,9 @@ void interruptHandler(uint gpio, uint32_t events)
     else if (gpio == RIGHT_ENCODER_PIN){
         rightWheelEncoderHandler();
     }
+    else if (gpio == IR_PIN){
+        //barcode_scanning_interrupt(gpio, events);
+    }
 }
 
 void setupInterrupts()
@@ -260,21 +278,21 @@ void setupInterrupts()
     gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interruptHandler);
     gpio_set_irq_enabled(LEFT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true);
     gpio_set_irq_enabled(RIGHT_ENCODER_PIN, GPIO_IRQ_EDGE_RISE, true);
+    //gpio_set_irq_enabled(IR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 
 }
 
 void vLaunch(void)
 {
     // Declaring instances of our tasks
-    TaskHandle_t wifi_taskTask;
     // TaskHandle_t ledtask;
-    TaskHandle_t magnetnometer_driverTask;
+    TaskHandle_t wifi_taskTask;
+    TaskHandle_t magnetnometer_driverTask;  
     TaskHandle_t ultrasonic_driverTask;
     TaskHandle_t motor_driverTask;
     TaskHandle_t ir_driverTask;
 
-    xTaskCreate(wifi_task, "wifi_task_thread", configMINIMAL_STACK_SIZE, NULL, TEST_TASK_PRIORITY, &wifi_taskTask);
-    // xTaskCreate(led_task, "TestLedThread", configMINIMAL_STACK_SIZE, NULL, 5, &ledtask);
+    xTaskCreate(wifi_task, "wifi_task_thread", configMINIMAL_STACK_SIZE, NULL, 2, &wifi_taskTask);
     xTaskCreate(magnetnometer_driver_task, "magnetnometer_driver_thread", configMINIMAL_STACK_SIZE, NULL, 4, &magnetnometer_driverTask);
     xTaskCreate(ultrasonic_driver_task, "ultrasonic_driver_thread", configMINIMAL_STACK_SIZE, NULL, 3, &ultrasonic_driverTask);
     xTaskCreate(motor_driver_task, "motor_driver_thread", configMINIMAL_STACK_SIZE, NULL, 2, &motor_driverTask);
