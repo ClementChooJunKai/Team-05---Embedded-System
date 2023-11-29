@@ -122,6 +122,8 @@ void motor_driver_task(__unused void *params)
 
     while (1)
     {
+
+        // Find current speed of both motors and set both to 1 if not moving
         float current_left_speed = getLeftMotorSpeed();
         float current_right_speed = getRightMotorSpeed();
         printf("Left speed: %f, Right speed: %f", current_left_speed, current_right_speed);
@@ -131,6 +133,7 @@ void motor_driver_task(__unused void *params)
         }
         else
         {
+            // PID Algorithm
             float target_speed = (current_left_speed + current_right_speed) / 2;
             float pid_out_left = pidUpdateLeft(target_speed, current_left_speed);
             float pid_out_right = pidUpdateRight(target_speed, current_right_speed);
@@ -169,8 +172,10 @@ void IR_driver_task(__unused void *params)
     {
         vTaskDelay(50);
         if (!obstacle_detected){
+            // Get readings of both IR sensors
             ir_sensor_read(&leftResult, &rightResult);
 
+            // Check for wall and turn 90 degrees in direction without a wall
             if (leftResult > DETECTION_THRESHOLD && rightResult > DETECTION_THRESHOLD){
                 wall_detected = true;
                 motor_stop();
@@ -188,21 +193,29 @@ void IR_driver_task(__unused void *params)
                     vTaskDelay(350);
                 }
             }
+
+
+            // Avoid left wall if detected
             else if (leftResult > DETECTION_THRESHOLD)
             {
                 wall_detected = true; // Set flag for wall detection
                 motor_rotate_right(duty_cycle_left, duty_cycle_right); // Rotate right
             }
+
+            // Avoid right wall if detected
             else if (rightResult > DETECTION_THRESHOLD)
             {
                 wall_detected = true; // Set flag for wall detection
                 motor_rotate_left(duty_cycle_left, duty_cycle_right); // Rotate left
             }
+
+            // Continue straight if no walls detected
             else{
                 wall_detected = false;
                 motor_forward(duty_cycle_left, duty_cycle_right);
             }
         }
+        // Clear wall detected flag if no walls are detected after adjustment
         else
         {
             wall_detected = false; // Clear flag if obstacle detected elsewhere
@@ -210,7 +223,7 @@ void IR_driver_task(__unused void *params)
     }
 }
 
-
+// Wifi connection and setup task
 void wifi_task(__unused void *params)
 {
     if (cyw43_arch_init())
@@ -261,6 +274,8 @@ void wifi_task(__unused void *params)
     cyw43_arch_deinit();
 }
 
+
+// Handler to direct interrupts to respective functions
 void interruptHandler(uint gpio, uint32_t events)
 {
     if (gpio == ULTRASONIC_ECHO_PIN){
@@ -277,6 +292,8 @@ void interruptHandler(uint gpio, uint32_t events)
     }
 }
 
+
+// Setup system to detect interrupts from respective pins
 void setupInterrupts()
 {
     gpio_set_irq_enabled_with_callback(ULTRASONIC_ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interruptHandler);
